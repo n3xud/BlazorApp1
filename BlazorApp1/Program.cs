@@ -4,9 +4,8 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using VisNetwork.Blazor;
 
 using Blazorise;
-using Blazorise.Bootstrap;
 using Blazorise.Icons.FontAwesome;
-
+using Blazorise.Bulma;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -18,7 +17,8 @@ builder.Services
     {
         options.Immediate = true;
     })
-    .AddBootstrapProviders()
+    .AddBulmaProviders()
     .AddFontAwesomeIcons();
+    
 
 await builder.Build().RunAsync();

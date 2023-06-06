@@ -8,12 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="Blazorise.Animate" Version="1.2.3" />
-    <PackageReference Include="Blazorise.Bootstrap" Version="1.2.3" />
+    <PackageReference Include="Blazorise.Bulma" Version="1.2.3" />
     <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.2.3" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.4" PrivateAssets="all" />
-    <PackageReference Include="Syncfusion.Blazor" Version="21.2.8" />
     <PackageReference Include="VisNetwork.Blazor" Version="2.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Shared\" />
   </ItemGroup>
 
 </Project>

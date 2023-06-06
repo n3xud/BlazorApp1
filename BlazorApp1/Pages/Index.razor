@@ -1,15 +1,27 @@
 ﻿@page "/"
 @inject NavigationManager UriHelper
 
-@using VisNetwork.Blazor.Models
-<html>
-	<body>
-		<h1>Index</h1>
-	<Button  Color="Color.Primary" @onclick="OnClick">PLAYER VS PLAYER</Button>
-	<Button   Color="Color.Primary" @onclick="OnClickAi">PLAYER VS AI</Button>
+
+
+
 	
-	</body>
-</html>
+	
+	<div class="columns  is-mobile is-centered ">
+		<div class="column is-half"><p class="title is-1 has-text-centered">Bisimulation</p></div>
+	</div>
+	<div class="columns is-mobile is-centered ">
+		<div class="column is-half"><h2 class="subtitle is-1 has-text-centered">Game</h2></div>
+	</div>
+	<div class="columns  is-mobile is-centered is-multiline ">
+	<div class="column is-narrow">
+		<button class="button is-primary " @onclick="OnClick">PLAYER VS PLAYER</button>
+	</div>
+	<div class="column is-narrow">
+		<button class="button is-primary" @onclick="OnClickAi">PLAYER VS AI</button>
+	</div>
+	</div>
+	
+
 
 
 
