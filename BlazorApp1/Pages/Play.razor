@@ -1,0 +1,284 @@
+﻿@page "/Play/{Value}"
+@inject NavigationManager UriHelper
+@using VisNetwork.Blazor.Models
+
+<p data-testid="selectedNodesParagraph">Node: @selectedNodes</p>
+<p data-testid="selectedNodesParagraph1">Node: @test2</p>
+<TextEdit ReadOnly Text="TEFASFGASFSADFDSA"/>
+<div>
+    <Button Color="Color.Primary" @onclick="SelectNode1Click">Start</Button>
+    <button @onclick="GoToIndex">Change Game Mode</button>
+    <Network Id="my-id" Data="@data" class="vis-network-container" OnSelectNode="GetSelectedNodes" @ref="network" Options="ConstructionOptions"  />
+    <Network Id="second" Data="@data2" class="vis-network-container" OnSelectNode="GetSelectedNodes2" @ref="network2" Options="ConstructionOptions" />
+
+</div>
+
+@code {
+    [Parameter]
+    public string Value { get; set; }
+
+    private NetworkData data;
+    private NetworkData data2;
+    private Network network;
+    private Network network2;
+    private string selectedNodes;
+    private string test2;
+
+    private void GoToIndex()
+    {
+        UriHelper.NavigateTo("/");
+    }
+
+
+    public Play()
+    {
+
+        GlobalValues.Instance.nodes = new List<Node>();
+        GlobalValues.Instance.edges = new List<Edge>();
+        GlobalValues.Instance.nodes2 = new List<Node>();
+        GlobalValues.Instance.edges2 = new List<Edge>();
+        createLTS(GlobalValues.Instance.nodes, GlobalValues.Instance.edges);
+        data = new NetworkData
+            {
+                Edges = GlobalValues.Instance.edges,
+                Nodes = GlobalValues.Instance.nodes
+            };
+        createLTS(GlobalValues.Instance.nodes2, GlobalValues.Instance.edges2);
+        
+
+        //var nodes2 = new List<Node>();
+       // var edges2 = new List<Edge>();
+
+        
+        data2 = new NetworkData
+             {
+                Edges = GlobalValues.Instance.edges2,
+                Nodes = GlobalValues.Instance.nodes2
+            };
+
+
+
+    }
+    private async void SelectNode1Click()
+    {
+        await network.SelectNodes(new[] { "0" });
+        selectedNodes = "0";
+        StateHasChanged();
+        await Check0Node();
+
+
+    }
+
+    private async Task Check0Node()
+    {
+        var edge1 = await network.GetSelectedEdges();
+        test2 = string.Concat(string.Join(",", edge1));
+        StateHasChanged();
+        string[] parts = test2.Split(',');
+        List<(int, int)> partsList = new List<(int, int)>();
+        foreach (string pair in parts)
+        {
+            string[] numbers = pair.Split('-');
+            int firstNumber = int.Parse(numbers[0]);
+            int secondNumber = int.Parse(numbers[1]);
+            partsList.Add((firstNumber, secondNumber));
+        }
+        foreach ((int firstNumber, int secondNumber) in partsList)
+        {
+            if (firstNumber == 0)
+            {
+                GlobalValues.Instance.tmp_dest.Add(secondNumber);
+                Console.WriteLine($"First Number: {firstNumber}, Second Number: {secondNumber}");
+            }
+
+        }
+        GlobalValues.Instance.tmp_node = 0;
+
+
+
+
+
+    }
+    private static Boolean check(int x)
+    {
+        return (GlobalValues.Instance.tmp_dest.Contains(x));
+    }
+    private async Task GetSelectedNodes(ClickEvent eventArg)
+    {
+        var result = await network.GetSelectedNodes();
+        var edge = await network.GetSelectedEdges();
+        test2 = string.Concat(string.Join(",", edge));
+        var selNode = string.Concat(result);
+        if (!check(Int16.Parse(selectedNodes)))
+        {
+            await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
+            Console.WriteLine("error nicht erlaubt");
+            return;
+        }
+        ;
+        GlobalValues.Instance.tmp_dest.Clear();
+        GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+        string[] parts = test2.Split(',');
+        List<(int, int)> partsList = new List<(int, int)>();
+        foreach (string pair in parts)
+        {
+            string[] numbers = pair.Split('-');
+            int firstNumber = int.Parse(numbers[0]);
+            int secondNumber = int.Parse(numbers[1]);
+            partsList.Add((firstNumber, secondNumber));
+        }
+        foreach ((int firstNumber, int secondNumber) in partsList)
+        {
+            if (firstNumber == Int16.Parse(selectedNodes))
+            {
+                GlobalValues.Instance.tmp_dest.Add(secondNumber);
+            }
+            Console.WriteLine($"First Number: {firstNumber}, Second Number: {secondNumber}");
+        }
+        // Node i = GlobalValues.Instance.nodes[Int16.Parse(selectedNodes)];
+
+        // i.Chosen = true;
+
+
+        /* await network.SetOptions(new NetworkOptions{
+        * 
+        Nodes = new NodeOption
+        {
+        Color = new NodeColorType
+    {
+     Background = "red"
+     }
+        }
+        });*/
+        // i.Color= new NodeColorType { Background = "red" };
+        //   await network.Redraw();
+        // await network.SetOptions(ConstructionOptions);
+        // await network.SetData(data);
+
+
+
+    }
+    private async Task GetSelectedNodes2(ClickEvent eventArg)
+    {
+ 
+        var result = await network2.GetSelectedNodes();
+        var edge = await network2.GetSelectedEdges();
+        test2 = string.Concat(string.Join(",", edge));
+        var selNode = string.Concat(result);
+        if (!check(Int16.Parse(selectedNodes)))
+        {
+            await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
+            Console.WriteLine("error nicht erlaubt");
+            return;
+        }
+        ;
+        GlobalValues.Instance.tmp_dest.Clear();
+        GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+        string[] parts = test2.Split(',');
+        List<(int, int)> partsList = new List<(int, int)>();
+        foreach (string pair in parts)
+        {
+            string[] numbers = pair.Split('-');
+            int firstNumber = int.Parse(numbers[0]);
+            int secondNumber = int.Parse(numbers[1]);
+            partsList.Add((firstNumber, secondNumber));
+        }
+        foreach ((int firstNumber, int secondNumber) in partsList)
+        {
+            if (firstNumber == Int16.Parse(selectedNodes))
+            {
+                GlobalValues.Instance.tmp_dest.Add(secondNumber);
+            }
+            Console.WriteLine($"First Number: {firstNumber}, Second Number: {secondNumber}");
+        }
+    }
+
+    public void createLTS(List<Node> nodes, List<Edge> edges)
+    {
+
+        string alphabet = "abcdefghijklmopqrstuvwxyz";
+        Random rnd = new Random();
+        int states = rnd.Next(1,10);
+        int alph = rnd.Next(1,24);
+        List<int>[,] LTS = new List<int>[states, alph];
+        for (int i = 0; i < LTS.GetLength(0); i++)
+        {      
+            nodes.Add(new Node(i.ToString(), string.Concat("Node",i), i, "circle"));
+        }
+        foreach (Node i in nodes)
+        {
+            //  i. = new NodeColorType.BorderBackgroundColor { Border = "green" };
+            List<int> tmp = new List<int>();
+
+            for(int j = 0; j < 3; j++)
+            {
+                int rnd_alph = rnd.Next(0, alph);
+                int rnd_to = rnd.Next(1, states);
+                if (tmp.Contains(rnd_to)) { continue; }
+                tmp.Add(rnd_to);
+                edges.Add(new Edge((i.Id).ToString(), rnd_to.ToString()) { From = (i.Id).ToString(), To = rnd_to.ToString(),Id =(i.Id).ToString() + "-" + rnd_to.ToString(), Label = alphabet[rnd_alph].ToString(), Arrows = new Arrows { To = new ArrowsOptions { Enabled = true } } });
+
+            }
+        }
+        
+    }
+    private NetworkOptions ConstructionOptions(Network network)
+    {
+        return new NetworkOptions
+            {
+                AutoResize = true,
+                ClickToUse = true,
+                Height = "640px",
+
+                Nodes = new NodeOption
+
+                {
+
+                    BorderWidth = 0,
+                    Color = new NodeColorType
+                    {
+                        Highlight = new NodeColorType.BorderBackgroundColor
+                        {
+                            Background = "red"
+                        },
+                    }
+                },
+                Interaction = new InteractionOptions
+                {
+                    //Selectable = false,
+                    //DragNodes = false,
+
+                }
+
+            };
+    }
+
+    public class GlobalValues
+    {
+        private static GlobalValues instance;
+        public List<int>[,] LTS { get; set; }
+        public List<Node> nodes { get; set; }
+        public List<Edge> edges { get; set; }
+        public List<int> tmp_dest { get; set; }
+        public int tmp_node{ get; set; }
+        public List<Node> nodes2 { get; set; }
+        public List<Edge> edges2 { get; set; }
+        public List<int> tmp_dest2 { get; set; }
+       
+        private GlobalValues()
+        {
+
+        }
+
+        public static GlobalValues Instance
+        {
+            get
+            {
+                if (instance == null)
+                    instance = new GlobalValues();
+                return instance;
+            }
+        }
+    }
+
+}
