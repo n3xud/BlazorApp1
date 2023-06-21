@@ -37,19 +37,35 @@
         GlobalValues.Instance.edges = new List<Edge>();
         GlobalValues.Instance.nodes2 = new List<Node>();
         GlobalValues.Instance.edges2 = new List<Edge>();
-        createLTS(GlobalValues.Instance.nodes, GlobalValues.Instance.edges);
+
+        int states1 = createLTS(GlobalValues.Instance.nodes, GlobalValues.Instance.edges);
+        int states2 = createLTS(GlobalValues.Instance.nodes2, GlobalValues.Instance.edges2,states1);
+        if(Value == "ai")
+        {
+            int states = states1 + states2;
+            GlobalValues.Instance.array = new int[states, states];
+            for (int i = 0; i < states; i++)
+            {
+                for (int j = 0; j < states; j++)
+                {
+                    GlobalValues.Instance.array[i, j] = 1;
+                }
+            }
+            calculateStrategy();
+        }
+
         data = new NetworkData
             {
                 Edges = GlobalValues.Instance.edges,
                 Nodes = GlobalValues.Instance.nodes
             };
-        createLTS(GlobalValues.Instance.nodes2, GlobalValues.Instance.edges2);
-        
+
+
 
         //var nodes2 = new List<Node>();
-       // var edges2 = new List<Edge>();
+        // var edges2 = new List<Edge>();
 
-        
+
         data2 = new NetworkData
              {
                 Edges = GlobalValues.Instance.edges2,
@@ -145,9 +161,9 @@
         Nodes = new NodeOption
         {
         Color = new NodeColorType
-    {
-     Background = "red"
-     }
+        {
+        Background = "red"
+        }
         }
         });*/
         // i.Color= new NodeColorType { Background = "red" };
@@ -160,7 +176,7 @@
     }
     private async Task GetSelectedNodes2(ClickEvent eventArg)
     {
- 
+
         var result = await network2.GetSelectedNodes();
         var edge = await network2.GetSelectedEdges();
         test2 = string.Concat(string.Join(",", edge));
@@ -193,15 +209,16 @@
         }
     }
 
-    public void createLTS(List<Node> nodes, List<Edge> edges)
+    public int createLTS(List<Node> nodes, List<Edge> edges,int startvalue=0)
     {
 
         string alphabet = "abcdefghijklmopqrstuvwxyz";
         Random rnd = new Random();
-        int states = rnd.Next(1,10);
+        int states = rnd.Next(2,10)+startvalue;
         int alph = rnd.Next(1,24);
-        List<int>[,] LTS = new List<int>[states, alph];
-        for (int i = 0; i < LTS.GetLength(0); i++)
+        GlobalValues.Instance.array = new int[states,states];
+
+        for (int i = 0+startvalue; i <states; i++)
         {      
             nodes.Add(new Node(i.ToString(), string.Concat("Node",i), i, "circle"));
         }
@@ -220,6 +237,11 @@
 
             }
         }
+
+        return states;
+    }
+    private void calculateStrategy()
+    {
         
     }
     private NetworkOptions ConstructionOptions(Network network)
@@ -264,7 +286,7 @@
         public List<Node> nodes2 { get; set; }
         public List<Edge> edges2 { get; set; }
         public List<int> tmp_dest2 { get; set; }
-       
+        public int[,] array { get; set; }
         private GlobalValues()
         {
 
