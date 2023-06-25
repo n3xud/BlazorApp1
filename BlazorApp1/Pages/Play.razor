@@ -1,19 +1,64 @@
 ﻿@page "/Play/{Value}"
 @inject NavigationManager UriHelper
 @using VisNetwork.Blazor.Models
+@using BlazorApp1.Pages
+<p data-testid="selectedNodesParagraph">Node: @tooo</p>
 
-<p data-testid="selectedNodesParagraph">Node: @selectedNodes</p>
-<p data-testid="selectedNodesParagraph1">Node: @test2</p>
-<TextEdit ReadOnly Text="TEFASFGASFSADFDSA"/>
-<div>
-    <Button Color="Color.Primary" @onclick="SelectNode1Click">Start</Button>
-    <button @onclick="GoToIndex">Change Game Mode</button>
-    <Network Id="my-id" Data="@data" class="vis-network-container" OnSelectNode="GetSelectedNodes" @ref="network" Options="ConstructionOptions"  />
-    <Network Id="second" Data="@data2" class="vis-network-container" OnSelectNode="GetSelectedNodes2" @ref="network2" Options="ConstructionOptions" />
-
+<div class="box">
+    @GlobalValues.Instance.tmp_node
 </div>
+@if (clicked){
+<div class="@modalvalue">
+    <div class="modal-background"></div>
+    
+        
+        <div class="modal-content">
+           
+                <footer class="card-footer">
+                <a class="card-footer-item" @onclick="disableModal">@GlobalValues.Instance.clicked_label</a>
+                    
+                </footer>
+            
+        
+        
+    </div>
+</div>
+}
+@if (clicked2)
+{
+    <div class="@modalvalue2">
+        <div class="modal-background"></div>
+
+
+        <div class="modal-content">
+
+            <footer class="card-footer">
+                <a class="card-footer-item" @onclick="disableModal2">@GlobalValues.Instance.clicked_label2</a>
+
+            </footer>
+
+
+
+        </div>
+    </div>
+}
+<Div Background="Background.Dark">
+    <button @onclick="GoToIndex">Change Game Mode</button>
+    @if (true)
+    {
+        <button class="button is-primary " @onclick="spoilerStart">Play as Spoiler</button>
+        <button class="@duplicatorvalue" @onclick="duplicatorStart">Play as Duplicator</button>
+    }
+    <Animate Animation="Animations.ZoomOut" Delay="TimeSpan.FromSeconds(0.5)" Easing="Easings.EaseIn">
+    <Network Id="my-id" Data="@data" class="vis-network-container" OnSelectNode="GetSelectedNodes" @ref="network" Options="ConstructionOptions"  />
+    </Animate>
+    <Animate Animation="Animations.ZoomOut" Delay="TimeSpan.FromSeconds(0.5)" Easing="Easings.EaseIn">
+    <Network Id="second" Data="@data2" class="vis-network-container" OnSelectNode="GetSelectedNodes2" @ref="network2" Options="ConstructionOptions" />
+    </Animate>
+</Div>
 
 @code {
+
     [Parameter]
     public string Value { get; set; }
 
@@ -22,14 +67,43 @@
     private Network network;
     private Network network2;
     private string selectedNodes;
-    private string test2;
+    private int startgo = 0;
+    private int startgo2 = 0;
+    public int states;
+    public bool clicked = false;
+    public bool clicked2 = false;
+    bool spoiler_turn = true;
+    public string tooo;
+    bool flag = false;
+    bool duplicator_turn;
+    string duplicatorvalue{ get; set; } = "button is-primary";
+    string modalvalue { get; set; } = "modal";
+    string modalvalue2 { get; set; } = "modal";
+    private TaskCompletionSource<bool> buttonClickedTaskCompletionSource;
 
     private void GoToIndex()
     {
         UriHelper.NavigateTo("/");
     }
 
+    private void spoilerStart()
+    {
 
+
+    }
+    private void duplicatorStart()
+    {
+
+    }
+    private void disableModal()
+    {
+        modalvalue = "modal";
+       // buttonClickedTaskCompletionSource.SetResult(true);
+    }
+    private void disableModal2()
+    {
+        modalvalue2 = "modal";
+    }
     public Play()
     {
 
@@ -37,21 +111,36 @@
         GlobalValues.Instance.edges = new List<Edge>();
         GlobalValues.Instance.nodes2 = new List<Node>();
         GlobalValues.Instance.edges2 = new List<Edge>();
-
+        GlobalValues.Instance.tmp_dest = new List<int>();
+        GlobalValues.Instance.tmp_dest2 = new List<int>();
         int states1 = createLTS(GlobalValues.Instance.nodes, GlobalValues.Instance.edges);
         int states2 = createLTS(GlobalValues.Instance.nodes2, GlobalValues.Instance.edges2,states1);
-        if(Value == "ai")
+
+        if(true)
         {
-            int states = states1 + states2;
+
+            states = states1 + states2;
+
             GlobalValues.Instance.array = new int[states, states];
+            GlobalValues.Instance.array_old = new int[states, states];
+            GlobalValues.Instance.spoiler = new Tuple<int, int>[states,states];
+            /*array2D[0, 0] = Tuple.Create(1, "A");
+            Tuple<int, string> value1 = array2D[0, 0];
+            int firstElement = value1.Item1;
+            string secondElement = value1.Item2;*/
             for (int i = 0; i < states; i++)
             {
                 for (int j = 0; j < states; j++)
                 {
                     GlobalValues.Instance.array[i, j] = 1;
+                    GlobalValues.Instance.array_old[i, j] = 0;
                 }
             }
+
             calculateStrategy();
+
+
+
         }
 
         data = new NetworkData
@@ -71,25 +160,55 @@
                 Edges = GlobalValues.Instance.edges2,
                 Nodes = GlobalValues.Instance.nodes2
             };
-
-
-
+        for (int k = 0; k < GlobalValues.Instance.final_classes.Count; k++)
+        {
+            Console.WriteLine(String.Join(", ", GlobalValues.Instance.final_classes[k].ToArray())); 
+        }
     }
-    private async void SelectNode1Click()
+   
+    public async Task duplicatorTurn()
     {
-        await network.SelectNodes(new[] { "0" });
-        selectedNodes = "0";
-        StateHasChanged();
-        await Check0Node();
-
+       
+        for (int k = 0; k < GlobalValues.Instance.final_classes.Count; k++)
+        {
+            foreach (Edge x in GlobalValues.Instance.edges2) {
+                if (Int16.Parse(x.From) == GlobalValues.Instance.tmp_node2) {
+                    if (GlobalValues.Instance.final_classes[k].Contains(GlobalValues.Instance.tmp_node) && GlobalValues.Instance.final_classes[k].Contains(Int16.Parse(x.To)))
+                    {
+                        if (x.Label == GlobalValues.Instance.clicked_label)
+                        {
+                            await network2.SelectNodes(new[] { x.To.ToString() });
+                            GlobalValues.Instance.tmp_node2 = Int16.Parse(x.To);
+                            flag = true;
+                        }
+                    }
+                    else
+                    {
+                        if (x.Label == GlobalValues.Instance.clicked_label)
+                        {
+                            await network2.SelectNodes(new[] { x.To.ToString() });
+                            GlobalValues.Instance.tmp_node2 = Int16.Parse(x.To);
+                            flag = true;
+                        }
+                    }
+                } 
+            }
+        }
+        if (flag == false)
+        {
+            Console.WriteLine("spoiler hat gewonnen");
+        }
+        flag = false;
 
     }
 
     private async Task Check0Node()
     {
         var edge1 = await network.GetSelectedEdges();
-        test2 = string.Concat(string.Join(",", edge1));
-        StateHasChanged();
+        var result = await network.GetSelectedNodes();
+        var selNode = string.Concat(result);
+        var test2 = string.Concat(string.Join(",", edge1));
+
         string[] parts = test2.Split(',');
         List<(int, int)> partsList = new List<(int, int)>();
         foreach (string pair in parts)
@@ -101,56 +220,98 @@
         }
         foreach ((int firstNumber, int secondNumber) in partsList)
         {
-            if (firstNumber == 0)
+            if (firstNumber.ToString() == selNode)
             {
                 GlobalValues.Instance.tmp_dest.Add(secondNumber);
-                Console.WriteLine($"First Number: {firstNumber}, Second Number: {secondNumber}");
+
             }
 
         }
-        GlobalValues.Instance.tmp_node = 0;
 
+    }
+    private async Task Check2Node()
+    {
+        var edge1 = await network2.GetSelectedEdges();
+        var result = await network2.GetSelectedNodes();
+        var selNode = string.Concat(result);
+        var test2 = string.Concat(string.Join(",", edge1));
 
+        string[] parts = test2.Split(',');
+        List<(int, int)> partsList = new List<(int, int)>();
+        foreach (string pair in parts)
+        {
+            string[] numbers = pair.Split('-');
+            int firstNumber = int.Parse(numbers[0]);
+            int secondNumber = int.Parse(numbers[1]);
+            partsList.Add((firstNumber, secondNumber));
+        }
+        foreach ((int firstNumber, int secondNumber) in partsList)
+        {
+            if (firstNumber.ToString() == selNode)
+            {
+                GlobalValues.Instance.tmp_dest2.Add(secondNumber);
 
+            }
 
+        }
 
     }
     private static Boolean check(int x)
     {
-        return (GlobalValues.Instance.tmp_dest.Contains(x));
+        bool k = GlobalValues.Instance.tmp_dest.Contains(x);
+        return (k);
+    }
+    private static Boolean check2(int x)
+    {
+        bool k = GlobalValues.Instance.tmp_dest2.Contains(x);
+        return (k);
     }
     private async Task GetSelectedNodes(ClickEvent eventArg)
     {
         var result = await network.GetSelectedNodes();
         var edge = await network.GetSelectedEdges();
-        test2 = string.Concat(string.Join(",", edge));
+        var test2 = string.Concat(string.Join(",", edge));
         var selNode = string.Concat(result);
-        if (!check(Int16.Parse(selectedNodes)))
+        if (startgo== 0)
         {
-            await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
+            Check0Node();
+            startgo = 1;
+            GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+            tooo = String.Join(", ", GlobalValues.Instance.tmp_dest.ToArray());
+            return;
+        }
+
+        if (check(Int16.Parse(selNode)) == false)
+        {
             Console.WriteLine("error nicht erlaubt");
+            await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
+
+            StateHasChanged();
             return;
         }
         ;
-        GlobalValues.Instance.tmp_dest.Clear();
-        GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
-        string[] parts = test2.Split(',');
-        List<(int, int)> partsList = new List<(int, int)>();
-        foreach (string pair in parts)
-        {
-            string[] numbers = pair.Split('-');
-            int firstNumber = int.Parse(numbers[0]);
-            int secondNumber = int.Parse(numbers[1]);
-            partsList.Add((firstNumber, secondNumber));
-        }
-        foreach ((int firstNumber, int secondNumber) in partsList)
-        {
-            if (firstNumber == Int16.Parse(selectedNodes))
+      
+            GlobalValues.Instance.tmp_dest.Clear();
+            await Check0Node();
+            tooo = String.Join(", ", GlobalValues.Instance.tmp_dest.ToArray());
+            StateHasChanged();
+            foreach (Edge x in GlobalValues.Instance.edges)
             {
-                GlobalValues.Instance.tmp_dest.Add(secondNumber);
+                if (x.From == GlobalValues.Instance.tmp_node.ToString() && (x.To == selNode))
+                {
+                    modalvalue = "modal is-active";
+                    clicked = true;
+                   // await buttonClickedTaskCompletionSource.Task;
+                    GlobalValues.Instance.clicked_label = x.Label;
+                }
             }
-            Console.WriteLine($"First Number: {firstNumber}, Second Number: {secondNumber}");
-        }
+            
+           
+            GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+            
+            await duplicatorTurn();
+        
+        
         // Node i = GlobalValues.Instance.nodes[Int16.Parse(selectedNodes)];
 
         // i.Chosen = true;
@@ -179,34 +340,42 @@
 
         var result = await network2.GetSelectedNodes();
         var edge = await network2.GetSelectedEdges();
-        test2 = string.Concat(string.Join(",", edge));
+        var test2 = string.Concat(string.Join(",", edge));
         var selNode = string.Concat(result);
-        if (!check(Int16.Parse(selectedNodes)))
+        if (startgo2 == 0)
         {
-            await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
+            Check2Node();
+            startgo2 = 1;
+            GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
+            tooo = String.Join(", ", GlobalValues.Instance.tmp_dest2.ToArray());
+            return;
+        }
+
+        if (check2(Int16.Parse(selNode)) == false)
+        {
             Console.WriteLine("error nicht erlaubt");
+            await network2.SelectNodes(new[] { GlobalValues.Instance.tmp_node2.ToString() });
+
+            StateHasChanged();
             return;
         }
         ;
-        GlobalValues.Instance.tmp_dest.Clear();
-        GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
-        string[] parts = test2.Split(',');
-        List<(int, int)> partsList = new List<(int, int)>();
-        foreach (string pair in parts)
+        GlobalValues.Instance.tmp_dest2.Clear();
+        await Check2Node();
+        tooo = String.Join(", ", GlobalValues.Instance.tmp_dest2.ToArray());
+
+        foreach (Edge x in GlobalValues.Instance.edges2)
         {
-            string[] numbers = pair.Split('-');
-            int firstNumber = int.Parse(numbers[0]);
-            int secondNumber = int.Parse(numbers[1]);
-            partsList.Add((firstNumber, secondNumber));
-        }
-        foreach ((int firstNumber, int secondNumber) in partsList)
-        {
-            if (firstNumber == Int16.Parse(selectedNodes))
+            if (x.From == GlobalValues.Instance.tmp_node2.ToString() && (x.To == selNode))
             {
-                GlobalValues.Instance.tmp_dest.Add(secondNumber);
+                GlobalValues.Instance.clicked_label2 = x.Label;
+
             }
-            Console.WriteLine($"First Number: {firstNumber}, Second Number: {secondNumber}");
         }
+        clicked2 = true;
+        modalvalue2 = "modal is-active";
+        GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
+
     }
 
     public int createLTS(List<Node> nodes, List<Edge> edges,int startvalue=0)
@@ -214,8 +383,9 @@
 
         string alphabet = "abcdefghijklmopqrstuvwxyz";
         Random rnd = new Random();
-        int states = rnd.Next(2,10)+startvalue;
-        int alph = rnd.Next(1,24);
+        int states = rnd.Next(2,5)+startvalue;
+        int alph = rnd.Next(1,3);
+        //GlobalValues.Instance.alphabet
         GlobalValues.Instance.array = new int[states,states];
 
         for (int i = 0+startvalue; i <states; i++)
@@ -242,7 +412,168 @@
     }
     private void calculateStrategy()
     {
-        
+
+        while (!checkEqual()){
+
+            for (int i = 0; i < states; i++)
+            {
+                for (int j = 0; j < states; j++)
+                {
+
+                    GlobalValues.Instance.array_old[i,j] = GlobalValues.Instance.array[i,j];
+
+                }
+            }
+
+            List<List<int>> classes = getClasses();
+            for (int i = 0; i < states; i++)
+            {
+                for (int j = 0; j < states; j++)
+                {
+                    if (GlobalValues.Instance.array_old[i, j] == 1)
+                    {
+                        for (int k = 0; k < classes.Count; k++)
+                        {
+                            for (int a = 0; a < 25; a++)
+                            {
+                                List<int> succI = GetSuccsessorsByLabel(i, a);
+                                List<int> succII = GetSuccsessorsByLabel(j, a);
+                                List<int> classBisim = classes[k];
+
+                                IEnumerable<int> tmpI = succI.Intersect(classBisim);
+                                IEnumerable<int> tmpII = succII.Intersect(classBisim);
+                                if (tmpI.Count() == 0 && tmpII.Count() > 0)
+                                {
+                                    List<int> asList = tmpII.ToList();
+                                    int tmp2 = asList[0];
+                                    GlobalValues.Instance.spoiler[i, j] = Tuple.Create( a, tmp2);
+                                    GlobalValues.Instance.array[i, j] = 0;
+                                    GlobalValues.Instance.array[j, i] = 0;
+                                    k = classes.Count;
+                                    a = 25;
+
+                                }
+                                else if (tmpI.Count() > 0 && tmpII.Count() == 0)
+                                {
+                                    List<int> asList = tmpI.ToList();
+                                    int tmp1 = asList[0];
+                                    GlobalValues.Instance.spoiler[i,j] = Tuple.Create(a, tmp1);
+                                    GlobalValues.Instance.array[i, j] = 0;
+                                    GlobalValues.Instance.array[j, i] = 0;
+                                    k = classes.Count;
+                                    a = 25;
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+    }
+    private List<int> GetSuccsessorsByLabel(int i, int a)
+    {
+
+        List<int> tmp = new List<int>();
+        string alph = "abcdefghijklmnopqrstuvwxyz";
+        foreach (Edge x in GlobalValues.Instance.edges)
+            if (x.From == i.ToString())
+            {
+                if (x.Label == alph[a].ToString())
+                {
+                    tmp.Add(Int16.Parse(x.To));
+                }
+            } 
+        foreach (Edge x in GlobalValues.Instance.edges2)
+            if (x.From == i.ToString())
+            {
+                if (x.Label == alph[a].ToString())
+                {
+                    tmp.Add(Int16.Parse(x.To));
+                }
+            }
+        return tmp;
+    }
+    private Boolean checkEqual()
+    {
+        for (int i = 0; i < states; i++)
+        {
+            for (int j = 0; j < states; j++)
+            {
+                if (GlobalValues.Instance.array[i,j] != GlobalValues.Instance.array_old[i,j])
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    private List<List<int>> getClasses()
+    {
+        List<List<int>> classes = new List<List<int>>();
+        for (int i = 0; i < states; i++)
+        {
+            for (int j = 0; j < states; j++)
+            {
+                if (i != j){
+                    if (GlobalValues.Instance.array_old[i, j] == 1)
+                    {
+                        if (classes.Count == 0)
+                        {
+                            List<int> tmp = new List<int>();
+                            tmp.Add(i);
+                            tmp.Add(j);
+                            classes.Add(tmp);
+                        }
+                        else
+                        {
+
+                            int c = 0;
+                            int classCount = classes.Count;
+                            Boolean flag = false;
+                            while (c < classCount)
+                            {
+
+                                if (classes[c].Contains(i))
+                                {
+                                    if (!classes[c].Contains(j))
+                                    {
+                                        classes[c].Add(j);
+                                    }
+                                    flag = true;
+                                }
+                                else if (classes[c].Contains(j))
+                                {
+                                    if (!classes[c].Contains(i))
+                                    {
+                                        classes[c].Add(i);
+                                    }
+                                    flag = true;
+                                }
+                                c++;
+                            }
+                            if (!flag)
+                            {
+
+
+                                List<int> tmp = new List<int>();
+                                tmp.Add(i);
+                                if (i != j) tmp.Add(j);
+                                classes.Add(tmp);
+                                c = classCount;
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+
+        GlobalValues.Instance.final_classes = classes;
+      
+        return classes;
     }
     private NetworkOptions ConstructionOptions(Network network)
     {
@@ -278,15 +609,22 @@
     public class GlobalValues
     {
         private static GlobalValues instance;
+        public int alphabet { get; set; }
         public List<int>[,] LTS { get; set; }
         public List<Node> nodes { get; set; }
         public List<Edge> edges { get; set; }
         public List<int> tmp_dest { get; set; }
         public int tmp_node{ get; set; }
+        public int tmp_node2 { get; set; }
+        public List<List<int>> final_classes{ get; set; }
         public List<Node> nodes2 { get; set; }
+        public string clicked_label { get; set; }
+        public string clicked_label2 { get; set; }
         public List<Edge> edges2 { get; set; }
         public List<int> tmp_dest2 { get; set; }
         public int[,] array { get; set; }
+        public int[,] array_old { get; set; }
+        public Tuple<int, int>[,] spoiler { get; set; }
         private GlobalValues()
         {
 

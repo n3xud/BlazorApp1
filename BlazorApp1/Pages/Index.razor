@@ -4,14 +4,20 @@
 
 
 
-	
-	<Animate Animation="Animations.Fade">
+<section class="hero is-large is-link">
+	<div class="hero-body">
+		<div class="container">
+<Animate Animation="Animations.Fade" Delay="TimeSpan.FromSeconds(1)">
 	<div class="columns  is-mobile is-centered ">
 		<div class="column is-half"><p class="title is-1 has-text-centered">Bisimulation</p></div>
 	</div>
+</Animate>
+<Animate Animation="Animations.Fade" Delay="TimeSpan.FromSeconds(1.5)">
 	<div class="columns is-mobile is-centered ">
 		<div class="column is-half"><h2 class="subtitle is-1 has-text-centered">Game</h2></div>
 	</div>
+</Animate>
+<Animate Animation="Animations.Fade" Delay="TimeSpan.FromSeconds(2)">
 	<div class="columns  is-mobile is-centered is-multiline ">
 	<div class="column is-narrow">
 		<button class="button is-primary " @onclick="OnClick">PLAYER VS PLAYER</button>
@@ -21,7 +27,9 @@
 	</div>
 	</div>
 </Animate>
-
+		</div>
+	</div>
+</section>
 
 
 
