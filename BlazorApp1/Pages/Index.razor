@@ -2,8 +2,6 @@
 @inject NavigationManager UriHelper
 
 
-
-
 <section class="hero is-large is-link">
 	<div class="hero-body">
 		<div class="container">
@@ -35,6 +33,8 @@
 
 @code {
 	private string parameter;
+	
+	
 	private void OnClick()
 	{
 		parameter = "player";
@@ -45,4 +45,10 @@
 		parameter = "ai";
 		UriHelper.NavigateTo($"play/{parameter}");
 	}
+	private void disableModal(string xy)
+
+	{
+		
+	}
+	
 }
