@@ -2,11 +2,7 @@
 @inject NavigationManager UriHelper
 @using VisNetwork.Blazor.Models
 @using BlazorApp1.Pages
-<p data-testid="selectedNodesParagraph">Node: @tooo</p>
 
-<div class="box">
-    @GlobalValues.Instance.tmp_node
-</div>
 @if (clicked){
     <div class="modal is-active">
     <div class="modal-background"></div>
@@ -25,13 +21,64 @@
     </div>
 </div>
 }
+@if (spoilerwon)
+{
+    <div class="modal is-active">
+        <div class="modal-background"></div>
+
+
+        <div class="modal-content">
+
+           
+            <div class="notification is-link">
+                <button class="delete" @onclick="finished"></button>
+                <div class="has-text-centered">Spoiler hat gewonnen</div>
+            </div>
+           
+
+        </div>
+    </div>
+}
+@if (start && Value=="ai")
+{
+    <section class="hero is-large is-link">
+        <div class="hero-body">
+            <div class="container">
+         
+                <Animate Animation="Animations.Fade" Delay="TimeSpan.FromSeconds(0.3)">
+                    <div class="columns  is-mobile is-centered is-multiline ">
+                        <div class="column is-narrow">
+                            <button class="button is-primary " @onclick="playasspoiler">Play as Spoiler</button>
+                        </div>
+                        <div class="column is-narrow">
+                            <button class="button is-primary" @onclick="playasduplicator">Play as Duplicator</button>
+                        </div>
+                    </div>
+                </Animate>
+            </div>
+        </div>
+    </section>
+    
+}
+else
+{
+    start = false;
+    clickedwholething = true;
+}
+@if(clickedwholething){
+<p>@if(duplicator_ai){@if (switc)
+            {
+                <Span>spoiler ist dran</Span>
+            }
+            else
+            {
+                <Span>duplicator ist dran</Span>
+            }
+
+        }@turndid
+    </p>
 <Div Background="Background.Dark">
-    <button @onclick="GoToIndex">Change Game Mode</button>
-    @if (true)
-    {
-        <button class="button is-primary " @onclick="spoilerStart">Play as Spoiler</button>
-        <button class="@duplicatorvalue" @onclick="duplicatorStart">Play as Duplicator</button>
-    }
+    <button @onclick="GoToIndex">Change Game Mode</button>    
     <Animate Animation="Animations.ZoomOut" Delay="TimeSpan.FromSeconds(0.5)" Easing="Easings.EaseIn">
     <Network Id="my-id" Data="@data" class="vis-network-container" OnSelectNode="GetSelectedNodes" @ref="network" Options="ConstructionOptions"  />
     </Animate>
@@ -39,7 +86,7 @@
     <Network Id="second" Data="@data2" class="vis-network-container" OnSelectNode="GetSelectedNodes2" @ref="network2" Options="ConstructionOptions" />
     </Animate>
 </Div>
-
+}
 @code {
 
     [Parameter]
@@ -50,15 +97,23 @@
     private Network network;
     private Network network2;
     private string selectedNodes;
+    public bool spoilerwon = false;
     private int startgo = 0;
     private int startgo2 = 0;
+    public string turndid="";
     public int states;
+    public bool start = true;
+    public bool clickedwholething = false;
     public bool clicked = false;
-    public bool clicked2 = false;
-    bool spoiler_turn = true;
-    public string tooo;
+    bool spoiler_ai = false;
+    bool duplicator_ai = false;
+    int spoilerstratnet;
+    int wnetwork;
+    int states1;
+    int states2;
+    bool switc = true;
+    bool possible = false;
     bool flag = false;
-    bool duplicator_turn;
     string duplicatorvalue{ get; set; } = "button is-primary";
 
     private TaskCompletionSource<bool> buttonClickedTaskCompletionSource;
@@ -67,24 +122,250 @@
     {
         UriHelper.NavigateTo("/");
     }
-
-    private void spoilerStart()
+    private void finished()
     {
+        UriHelper.NavigateTo("/");
+    }
+    private void playasspoiler()
+    {
+        duplicator_ai = true;
+        start = false;
+        clickedwholething = true;
         //player selects 2 states
         //player does his first move network and network2 have to register his move
         //spoiler state is saved
         //duplicator calculates is next move based on spoilers move
 
     }
-    private void duplicatorStart()
+    private async Task playasduplicator()
     {
-
+        spoiler_ai= true;
+        switc = false;
+        clickedwholething = true;
+        start = false;
     }
-    private void disableModal(string clickedlabel)
+    private async Task spoilerTurn()
+    {
+        string alphabet = "abcdefghijklmopqrstuvwxyz";
+        Tuple<int, int> value1;
+        int secondElement;
+        string tmpa = "";
+        string tmpxt = "";
+        possible = false;
+        for (int i = 0; i < states; i++)
+        {
+            for (int j = 0; j < states; j++)
+            {
+                if ((GlobalValues.Instance.tmp_node == i || GlobalValues.Instance.tmp_node == j) && (GlobalValues.Instance.tmp_node2 == i || GlobalValues.Instance.tmp_node2 == j))
+                {
+                    var value3 = GlobalValues.Instance.spoiler[i, j];
+                    var test12345 = value3.Item2;
+                    if (test12345 != 999)
+                    {
+
+
+                        value1 = GlobalValues.Instance.spoiler[i, j];
+                        secondElement = value1.Item2;
+                        foreach (Edge x in GlobalValues.Instance.edges)
+                        {
+                            if ((x.From == i.ToString() || x.From == j.ToString()) && (x.To == secondElement.ToString()))
+                            {
+                                GlobalValues.Instance.clicked_label = alphabet[value1.Item1].ToString();
+                                GlobalValues.Instance.tmp_node = Int16.Parse(x.To);
+                                if (secondElement < states1) { await network.SelectNodes(new[] { secondElement.ToString() }); }
+                                Console.WriteLine(secondElement+" sec ");
+                                turndid = x.To + " " + GlobalValues.Instance.clicked_label;
+                                StateHasChanged();
+                                spoilerstratnet = 1;
+                                foreach (Edge y in GlobalValues.Instance.edges2)
+                                {
+                                    if (y.From == GlobalValues.Instance.tmp_node2.ToString() && y.Label == GlobalValues.Instance.clicked_label)
+                                    {
+                                        possible = true;
+
+                                    }
+                                }
+                                if (possible)
+                                {
+                                    return;
+                                }
+                                else
+                                {
+                                    spoilerwon = true;
+                                    
+                                    return;
+                                }
+                            }
+                        }
+                        foreach (Edge x in GlobalValues.Instance.edges2)
+                        {
+                            if ((x.From == i.ToString() || x.From == j.ToString()) && (x.To == secondElement.ToString()))
+                            {
+                                GlobalValues.Instance.clicked_label = alphabet[value1.Item1].ToString();
+                                GlobalValues.Instance.tmp_node2 = Int16.Parse(x.To);
+                                if (secondElement > states1) { await network2.SelectNodes(new[] { secondElement.ToString() }); }
+                                turndid = x.To + " " + GlobalValues.Instance.clicked_label;
+                                StateHasChanged();
+                                spoilerstratnet = 2;
+                                foreach (Edge y in GlobalValues.Instance.edges)
+                                {
+                                    if (y.From == GlobalValues.Instance.tmp_node.ToString() && y.Label == GlobalValues.Instance.clicked_label)
+                                    {
+                                        possible = true;
+
+                                    }
+                                }
+                                if (possible)
+                                {
+                                    return;
+                                }
+                                else
+                                {
+                                    spoilerwon = true;
+                                    
+                                    return;
+                                }
+
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        foreach (Edge x in GlobalValues.Instance.edges)
+                        {
+                            if (x.From == i.ToString() || x.From == j.ToString())
+                            {
+                                tmpa = x.Label;
+
+                                tmpxt = x.To;
+
+                            }
+                        }
+                        foreach (Edge x in GlobalValues.Instance.edges2)
+                        {
+                            if (x.From == i.ToString() || x.From == j.ToString())
+                            {
+                                tmpa = x.Label;
+
+                                tmpxt = x.To;
+
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+        if (Int16.Parse(tmpxt) < states1)
+        {
+            GlobalValues.Instance.clicked_label = tmpa;
+            GlobalValues.Instance.tmp_node = Int16.Parse(tmpxt);
+            spoilerstratnet = 1;
+            await network.SelectNodes(new[] { tmpxt.ToString() });
+            foreach (Edge y in GlobalValues.Instance.edges2)
+            {
+                if (y.From == GlobalValues.Instance.tmp_node2.ToString() && y.Label == GlobalValues.Instance.clicked_label)
+                {
+                    possible = true;
+
+                }
+            }
+            if (!possible)
+            {
+
+                spoilerwon = true;
+                
+            }
+            turndid = tmpxt + " " + GlobalValues.Instance.clicked_label;
+            StateHasChanged();
+        }
+        else
+        {
+            GlobalValues.Instance.clicked_label = tmpa;
+            GlobalValues.Instance.tmp_node2 = Int16.Parse(tmpxt);
+            spoilerstratnet = 2;
+            await network2.SelectNodes(new[] { tmpxt.ToString() });
+            foreach (Edge y in GlobalValues.Instance.edges)
+            {
+                if (y.From == GlobalValues.Instance.tmp_node.ToString() && y.Label == GlobalValues.Instance.clicked_label)
+                {
+                    possible = true;
+
+                }
+            }
+            if (!possible)
+            {
+
+                spoilerwon = true;
+                
+            }
+            turndid = tmpxt + " " + GlobalValues.Instance.clicked_label;
+            StateHasChanged();
+        }
+    }
+    private async Task disableModal(string clickedlabel)
     {
         GlobalValues.Instance.clicked_label = clickedlabel;
-        GlobalValues.Instance.clicked_label_list.Clear();
-        clicked = false;
+
+        if (wnetwork == 1) { 
+            clicked = false;
+            var result = await network.GetSelectedNodes();
+            var selNode = string.Concat(result);
+            GlobalValues.Instance.clicked_label_list.Clear();
+
+            foreach (Edge x in GlobalValues.Instance.edges)
+            {
+                if (x.From == GlobalValues.Instance.tmp_node.ToString() && (x.To == selNode))
+                {
+
+
+
+                    GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+                    switc = false;
+                    if (duplicator_ai)
+                    {
+                        await duplicatorTurn();
+
+                    }
+                    return;
+                }
+
+
+            }
+            Console.WriteLine("error nicht erlaubt");
+            await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
+        }
+        if (wnetwork == 2)
+        {
+            clicked = false;
+            var result = await network2.GetSelectedNodes();
+            var selNode = string.Concat(result);
+            GlobalValues.Instance.clicked_label_list.Clear();
+
+            foreach (Edge x in GlobalValues.Instance.edges2)
+            {
+                if (x.From == GlobalValues.Instance.tmp_node2.ToString() && (x.To == selNode))
+                {
+
+
+
+                    GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
+                    switc = false;
+                    if (duplicator_ai)
+                    {
+                        await duplicatorTurn();
+
+                    }
+                    return;
+                }
+
+
+            }
+            Console.WriteLine("error nicht erlaubt");
+            await network2.SelectNodes(new[] { GlobalValues.Instance.tmp_node2.ToString() });
+        }
+
     }
 
     public Play()
@@ -97,35 +378,42 @@
         GlobalValues.Instance.tmp_dest = new List<int>();
         GlobalValues.Instance.tmp_dest2 = new List<int>();
         GlobalValues.Instance.clicked_label_list = new List<string>();
-        int states1 = createLTS(GlobalValues.Instance.nodes, GlobalValues.Instance.edges);
-        int states2 = createLTS(GlobalValues.Instance.nodes2, GlobalValues.Instance.edges2,states1);
+       
+        states1 = createLTS(GlobalValues.Instance.nodes, GlobalValues.Instance.edges);
+        states2 = createLTS(GlobalValues.Instance.nodes2, GlobalValues.Instance.edges2, states1);
 
-        if(true)
+
+
+        states = states1 + states2;
+
+        GlobalValues.Instance.array = new int[states, states];
+        GlobalValues.Instance.array_old = new int[states, states];
+        Console.WriteLine(states1);
+        Console.WriteLine(states2);
+        Console.WriteLine(states);
+        GlobalValues.Instance.spoiler = new Tuple<int, int>[states, states];
+        for (int i = 0; i < states; i++)
         {
-
-            states = states1 + states2;
-
-            GlobalValues.Instance.array = new int[states, states];
-            GlobalValues.Instance.array_old = new int[states, states];
-            GlobalValues.Instance.spoiler = new Tuple<int, int>[states,states];
-            /*array2D[0, 0] = Tuple.Create(1, "A");
-            Tuple<int, string> value1 = array2D[0, 0];
-            int firstElement = value1.Item1;
-            string secondElement = value1.Item2;*/
-            for (int i = 0; i < states; i++)
+            for (int j = 0; j < states; j++)
             {
-                for (int j = 0; j < states; j++)
-                {
-                    GlobalValues.Instance.array[i, j] = 1;
-                    GlobalValues.Instance.array_old[i, j] = 0;
-                }
+                GlobalValues.Instance.spoiler[i, j] = Tuple.Create(999, 999); 
             }
-
-            calculateStrategy();
-
-
-
         }
+
+        for (int i = 0; i < states; i++)
+        {
+            for (int j = 0; j < states; j++)
+            {
+                GlobalValues.Instance.array[i, j] = 1;
+                GlobalValues.Instance.array_old[i, j] = 0;
+            }
+        }
+
+        calculateStrategy();
+
+
+
+
 
         data = new NetworkData
             {
@@ -135,25 +423,32 @@
 
 
 
-        //var nodes2 = new List<Node>();
-        // var edges2 = new List<Edge>();
 
 
         data2 = new NetworkData
-             {
+            {
                 Edges = GlobalValues.Instance.edges2,
                 Nodes = GlobalValues.Instance.nodes2
             };
-        for (int k = 0; k < GlobalValues.Instance.final_classes.Count; k++)
+
+
+        for (int i = 0; i < states; i++)
         {
-            Console.WriteLine(String.Join(", ", GlobalValues.Instance.final_classes[k].ToArray())); 
+            for (int j = 0; j < states; j++)
+            {
+                Console.WriteLine(i + " " + j);
+
+                var value3 = GlobalValues.Instance.spoiler[i, j];
+                var test12345 = value3.Item2;
+                Console.WriteLine(test12345);
+            }
         }
     }
 
-    public async Task duplicatorTurn(int turn)
+    public async Task duplicatorTurn()
     {
         int temporary = 0;
-        if (turn==1){
+        if (wnetwork==1){
 
             foreach (Edge x in GlobalValues.Instance.edges2) 
             {
@@ -174,6 +469,7 @@
                                 await network2.SelectNodes(new[] { x.To.ToString() });
                                 GlobalValues.Instance.tmp_node2 = Int16.Parse(x.To);
                                 flag = false;
+                                switc = true;
                                 return;
                             }
                         }
@@ -186,15 +482,18 @@
             {
                 await network2.SelectNodes(new[] { temporary.ToString() });
                 GlobalValues.Instance.tmp_node2 = temporary;
+                switc = true;
+                flag = false;
             }
             else
             {
                 Console.WriteLine("Spoiler hat gewonnen");
+                spoilerwon = true;
             }
 
             flag = false;
         }
-        if (turn == 2)
+        if (wnetwork == 2)
         {
 
             foreach (Edge x in GlobalValues.Instance.edges)
@@ -215,6 +514,7 @@
                             {
                                 await network.SelectNodes(new[] { x.To.ToString() });
                                 GlobalValues.Instance.tmp_node = Int16.Parse(x.To);
+                                switc = true;
                                 flag = false;
                                 return;
                             }
@@ -228,10 +528,13 @@
             {
                 await network.SelectNodes(new[] { temporary.ToString() });
                 GlobalValues.Instance.tmp_node = temporary;
+                switc = true;
+                flag = false;
             }
             else
             {
                 Console.WriteLine("Spoiler hat gewonnen");
+                spoilerwon = true;
             }
 
             flag = false;
@@ -248,22 +551,35 @@
 
         string[] parts = test2.Split(',');
         List<(int, int)> partsList = new List<(int, int)>();
+        /* if (!spoiler_ai)
+        {
         foreach (string pair in parts)
         {
-            string[] numbers = pair.Split('-');
-            int firstNumber = int.Parse(numbers[0]);
-            int secondNumber = int.Parse(numbers[1]);
-            partsList.Add((firstNumber, secondNumber));
-        }
-        foreach ((int firstNumber, int secondNumber) in partsList)
+        string[] numbers = pair.Split('-');
+        int firstNumber = int.Parse(numbers[0]);
+        int secondNumber = int.Parse(numbers[1]);
+        partsList.Add((firstNumber, secondNumber));
+    }
+    foreach ((int firstNumber, int secondNumber) in partsList)
         {
-            if (firstNumber.ToString() == selNode)
+        if (firstNumber.ToString() == selNode)
             {
-                GlobalValues.Instance.tmp_dest.Add(secondNumber);
+            GlobalValues.Instance.tmp_dest.Add(secondNumber);
 
+          }
+
+          }
+          }
+          */
+
+        foreach(Edge x in GlobalValues.Instance.edges)
+        {
+            if(selNode == x.From)
+            {
+                GlobalValues.Instance.tmp_dest.Add(Int16.Parse(x.To));
             }
-
         }
+
 
     }
     private async Task Check2Node()
@@ -275,80 +591,115 @@
 
         string[] parts = test2.Split(',');
         List<(int, int)> partsList = new List<(int, int)>();
-        foreach (string pair in parts)
+
+        /* foreach (string pair in parts)
         {
-            string[] numbers = pair.Split('-');
-            int firstNumber = int.Parse(numbers[0]);
-            int secondNumber = int.Parse(numbers[1]);
-            partsList.Add((firstNumber, secondNumber));
-        }
-        foreach ((int firstNumber, int secondNumber) in partsList)
+        string[] numbers = pair.Split('-');
+        int firstNumber = int.Parse(numbers[0]);
+        int secondNumber = int.Parse(numbers[1]);
+        partsList.Add((firstNumber, secondNumber));
+    }
+    foreach ((int firstNumber, int secondNumber) in partsList)
         {
-            if (firstNumber.ToString() == selNode)
+        if (firstNumber.ToString() == selNode)
             {
-                GlobalValues.Instance.tmp_dest2.Add(secondNumber);
-
-            }
+            GlobalValues.Instance.tmp_dest2.Add(secondNumber);
 
         }
 
+        }
+
+        */
+        foreach (Edge x in GlobalValues.Instance.edges2)
+        {
+            if (selNode == x.From && x.Label == GlobalValues.Instance.clicked_label)
+            {
+                GlobalValues.Instance.tmp_dest2.Add(Int16.Parse(x.To));
+            }
+        }
+
+
     }
-    private static Boolean check(int x)
-    {
-        bool k = GlobalValues.Instance.tmp_dest.Contains(x);
-        return (k);
-    }
-    private static Boolean check2(int x)
-    {
-        bool k = GlobalValues.Instance.tmp_dest2.Contains(x);
-        return (k);
-    }
+
     private async Task GetSelectedNodes(ClickEvent eventArg)
     {
         var result = await network.GetSelectedNodes();
         var edge = await network.GetSelectedEdges();
         var test2 = string.Concat(string.Join(",", edge));
         var selNode = string.Concat(result);
+        wnetwork = 1;
         if (startgo== 0)
         {
-            Check0Node();
             startgo = 1;
+
             GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
-            return;
-        }
-
-        if (check(Int16.Parse(selNode)) == false)
-        {
-            Console.WriteLine("error nicht erlaubt");
-            await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
-
-            StateHasChanged();
-            return;
-        }
-        ;
-
-        GlobalValues.Instance.tmp_dest.Clear();
-        await Check0Node();
-        StateHasChanged();
-        
-        foreach (Edge x in GlobalValues.Instance.edges)
-        {
-            if (x.From == GlobalValues.Instance.tmp_node.ToString() && (x.To == selNode))
+            if (startgo == 1 && startgo2 == 1 && spoiler_ai == true)
             {
+                spoilerTurn();
+                startgo = 2;
+            }
+            return;
+        }
 
-                GlobalValues.Instance.clicked_label_list.Add(x.Label);
+        if (switc)
+        {
+            foreach (Edge x in GlobalValues.Instance.edges)
+            {
+                if (x.From == GlobalValues.Instance.tmp_node.ToString() && (x.To == selNode))
+                {
+
+                    GlobalValues.Instance.clicked_label_list.Add(x.Label);
+
+                }
 
             }
+            foreach (Edge x in GlobalValues.Instance.edges)
+            {
+                if (x.From == GlobalValues.Instance.tmp_node.ToString() && (x.To == selNode))
+                {
 
+                    clicked = true;
+                    return;
+                }
+
+            }
+            await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
+            GlobalValues.Instance.clicked_label_list.Clear();
+        }else{
+            foreach (Edge x in GlobalValues.Instance.edges)
+            {
+                if (x.From == GlobalValues.Instance.tmp_node.ToString() && (x.To == selNode) && x.Label == GlobalValues.Instance.clicked_label)
+                {
+
+                    GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+                    GlobalValues.Instance.tmp_dest.Clear();
+                    if (spoiler_ai && spoilerstratnet==2)
+                    {
+                        spoilerTurn();
+                        return;
+                    }
+                    else if (spoiler_ai)
+                    {
+                        await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
+                        return;
+                    }
+
+                    switc = true;
+                    return;
+                }
+
+            }
+            await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
         }
-        GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
-        clicked = true;
-        
 
 
-          //  await duplicatorTurn(1);
-        
-        
+
+
+
+
+
+
+
         // Node i = GlobalValues.Instance.nodes[Int16.Parse(selectedNodes)];
 
         // i.Chosen = true;
@@ -379,38 +730,72 @@
         var edge = await network2.GetSelectedEdges();
         var test2 = string.Concat(string.Join(",", edge));
         var selNode = string.Concat(result);
+        wnetwork = 2;
         if (startgo2 == 0)
         {
-            Check2Node();
             startgo2 = 1;
+
             GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
-            tooo = String.Join(", ", GlobalValues.Instance.tmp_dest2.ToArray());
-            return;
-        }
-
-        if (check2(Int16.Parse(selNode)) == false)
-        {
-            Console.WriteLine("error nicht erlaubt");
-            await network2.SelectNodes(new[] { GlobalValues.Instance.tmp_node2.ToString() });
-
-            StateHasChanged();
-            return;
-        }
-        ;
-        GlobalValues.Instance.tmp_dest2.Clear();
-        await Check2Node();
-        tooo = String.Join(", ", GlobalValues.Instance.tmp_dest2.ToArray());
-        
-        foreach (Edge x in GlobalValues.Instance.edges2)
-        {
-            if (x.From == GlobalValues.Instance.tmp_node2.ToString() && (x.To == selNode))
+            if (startgo == 1 && startgo2 == 1 && spoiler_ai == true)
             {
-                GlobalValues.Instance.clicked_label_list.Add(x.Label);
+                spoilerTurn();
+                startgo = 2;
             }
+            return;
         }
-        GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
-        clicked = true;
-        //await duplicatorTurn(2);
+
+        if (switc)
+        {
+            foreach (Edge x in GlobalValues.Instance.edges2)
+            {
+                if (x.From == GlobalValues.Instance.tmp_node2.ToString() && (x.To == selNode))
+                {
+
+                    GlobalValues.Instance.clicked_label_list.Add(x.Label);
+
+                }
+
+            }
+            foreach (Edge x in GlobalValues.Instance.edges2)
+            {
+                if (x.From == GlobalValues.Instance.tmp_node2.ToString() && (x.To == selNode))
+                {
+
+                    clicked = true;
+                    return;
+                }
+
+            }
+            await network2.SelectNodes(new[] { GlobalValues.Instance.tmp_node2.ToString() });
+            GlobalValues.Instance.clicked_label_list.Clear();
+        }
+        else
+        {
+            foreach (Edge x in GlobalValues.Instance.edges2)
+            {
+                if (x.From == GlobalValues.Instance.tmp_node2.ToString() && (x.To == selNode) && x.Label == GlobalValues.Instance.clicked_label)
+                {
+
+                    GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
+                    if (spoiler_ai && spoilerstratnet==1)
+                    {
+                        spoilerTurn();
+                        return;
+                    }else if(spoiler_ai){
+                        await network2.SelectNodes(new[] { GlobalValues.Instance.tmp_node2.ToString() });
+                        return;
+                    }
+                    switc = true;
+                    return;
+                }
+
+            }
+            await network2.SelectNodes(new[] { GlobalValues.Instance.tmp_node2.ToString() });
+        }
+
+
+
+
     }
 
     public int createLTS(List<Node> nodes, List<Edge> edges,int startvalue=0)
@@ -418,13 +803,14 @@
 
         string alphabet = "abcdefghijklmopqrstuvwxyz";
         Random rnd = new Random();
-        int states = rnd.Next(2,5)+startvalue;
-        int alph = rnd.Next(1,3);
+        int states = rnd.Next(2,5);
+        int alph = rnd.Next(1,5);
         //GlobalValues.Instance.alphabet
         GlobalValues.Instance.array = new int[states,states];
 
-        for (int i = 0+startvalue; i <states; i++)
-        {      
+        for (int i = 0 + startvalue; i < states + startvalue; i++)
+        {
+          
             nodes.Add(new Node(i.ToString(), string.Concat("Node",i), i, "circle"));
         }
         foreach (Node i in nodes)
@@ -435,11 +821,11 @@
             for(int j = 0; j < 3; j++)
             {
                 int rnd_alph = rnd.Next(0, alph);
-                int rnd_to = rnd.Next(1, states);
+                int rnd_to = rnd.Next(1+startvalue, states+startvalue);
                 if (tmp.Contains(rnd_to)) { continue; }
                 tmp.Add(rnd_to);
                 edges.Add(new Edge((i.Id).ToString(), rnd_to.ToString()) { From = (i.Id).ToString(), To = rnd_to.ToString(),Id =(i.Id).ToString() + "-" + rnd_to.ToString(), Label = alphabet[rnd_alph].ToString(), Arrows = new Arrows { To = new ArrowsOptions { Enabled = true } } });
-
+               
             }
         }
 
