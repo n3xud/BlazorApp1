@@ -21,6 +21,24 @@
     </div>
 </div>
 }
+@if (starterrorvalue)
+{
+<div class="modal is-active">
+    <div class="modal-background"></div>
+
+
+    <div class="modal-content">
+
+
+        <div class="notification is-danger">
+            <button class="delete" @onclick="starterror"></button>
+            <div class="has-text-centered">2. Zustand auswählen</div>
+        </div>
+
+
+    </div>
+</div>
+}
 @if (spoilerwon)
 {
     <div class="modal is-active">
@@ -108,6 +126,7 @@ else
     bool spoiler_ai = false;
     bool duplicator_ai = false;
     int spoilerstratnet;
+    bool starterrorvalue = false;
     int wnetwork;
     int states1;
     int states2;
@@ -137,6 +156,10 @@ else
         //spoiler state is saved
         //duplicator calculates is next move based on spoilers move
 
+    }
+    private void starterror()
+    {
+        starterrorvalue = false;
     }
     private async Task playasduplicator()
     {
@@ -310,6 +333,7 @@ else
         GlobalValues.Instance.clicked_label = clickedlabel;
 
         if (wnetwork == 1) { 
+            possible = false;
             clicked = false;
             var result = await network.GetSelectedNodes();
             var selNode = string.Concat(result);
@@ -358,6 +382,7 @@ else
         }
         if (wnetwork == 2)
         {
+            possible = false;
             clicked = false;
             var result = await network2.GetSelectedNodes();
             var selNode = string.Concat(result);
@@ -679,7 +704,11 @@ else
             }
             return;
         }
-
+        if(startgo2==0){
+            await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
+            starterrorvalue = true;
+            return;
+        }
         if (switc)
         {
             foreach (Edge x in GlobalValues.Instance.edges)
@@ -787,7 +816,12 @@ else
             }
             return;
         }
-
+        if (startgo == 0)
+        {
+            await network2.SelectNodes(new[] { GlobalValues.Instance.tmp_node2.ToString() });
+            starterrorvalue = true;
+            return;
+        }
         if (switc)
         {
             foreach (Edge x in GlobalValues.Instance.edges2)
