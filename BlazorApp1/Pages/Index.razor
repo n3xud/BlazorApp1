@@ -1,6 +1,6 @@
 ﻿@page "/"
 @inject NavigationManager UriHelper
-
+@using VisNetwork.Blazor.Models
 
 <section class="hero is-large is-link">
 	<div class="hero-body">
@@ -19,23 +19,25 @@
 <Animate Animation="Animations.Fade" Delay="TimeSpan.FromSeconds(2)">
 	<div class="columns  is-mobile is-centered is-multiline ">
 	<div class="column is-narrow">
-		<button class="button is-primary " @onclick="OnClick">PLAYER VS PLAYER</button>
+						<button class="button is-primary button is-large" @onclick="OnClick">PLAYER VS PLAYER</button>
 	</div>
 	<div class="column is-narrow">
-		<button class="button is-primary" @onclick="OnClickAi">PLAYER VS AI</button>
+						<button class="button is-primary button is-large" @onclick="OnClickAi">PLAYER VS AI</button>
 	</div>
 	</div>
 </Animate>
 		</div>
 	</div>
+
 </section>
 
 
 
 @code {
 	private string parameter;
-	
-	
+	private NetworkData data;
+	private Network network;
+
 	private void OnClick()
 	{
 		parameter = "player";
@@ -46,10 +48,118 @@
 		parameter = "ai";
 		UriHelper.NavigateTo($"play/{parameter}");
 	}
-	private void disableModal(string xy)
+	public Index(){
+		GlobalValues.Instance.nodes = new List<Node>();
+		GlobalValues.Instance.edges = new List<Edge>();
 
-	{
-		
+		data = new NetworkData
+			{
+				Edges = GlobalValues.Instance.edges,
+				Nodes = GlobalValues.Instance.nodes
+			};
+		createLTS(GlobalValues.Instance.nodes, GlobalValues.Instance.edges);
+
 	}
+	public int createLTS(List<Node> nodes, List<Edge> edges, int startvalue = 0)
+	{
+
+		string alphabet = "abcdefghijklmopqrstuvwxyz";
+		Random rnd = new Random();
+		int states = rnd.Next(2, 5);
+		int alph = rnd.Next(1, 5);
+
+
+
+		for (int i = 0 + startvalue; i < states + startvalue; i++)
+		{
+
+			nodes.Add(new Node(i.ToString(), string.Concat("Node", i), i, "circle"));
+		}
+		foreach (Node i in nodes)
+		{
+			//  i. = new NodeColorType.BorderBackgroundColor { Border = "green" };
+			List<int> tmp = new List<int>();
+
+			for (int j = 0; j < 3; j++)
+			{
+				int rnd_alph = rnd.Next(0, alph);
+				int rnd_to = rnd.Next(1 + startvalue, states + startvalue);
+				if (tmp.Contains(rnd_to)) { continue; }
+				tmp.Add(rnd_to);
+				edges.Add(new Edge((i.Id).ToString(), rnd_to.ToString()) { From = (i.Id).ToString(), To = rnd_to.ToString(), Id = (i.Id).ToString() + "-" + rnd_to.ToString(), Label = alphabet[rnd_alph].ToString(), Arrows = new Arrows { To = new ArrowsOptions { Enabled = true } } });
+
+			}
+		}
+
+		return states;
+	}
+	private NetworkOptions ConstructionOptions(Network network)
+	{
+		return new NetworkOptions
+			{
+				AutoResize = true,
+				ClickToUse = true,
+				Height = "100%",
+
+				Nodes = new NodeOption
+
+				{
+
+					BorderWidth = 0,
+					Fixed = new NodeFixedOption
+					{
+						X = true,
+	},
+					Color = new NodeColorType
+					{
+						Highlight = new NodeColorType.BorderBackgroundColor
+						{
+							Background = "green"
+						},
+					}
+				},
+				Interaction = new InteractionOptions
+				{
+
+					//Selectable = false,
+					//DragNodes = false,
+
+				},
+				Physics = new PhysicsOptions
+				{
+					Wind = new WindOption
+					{
+						X = 1,
+						Y = 1
+					},
+					BarnesHut = new BarnesHutOption
+					{
+						CentralGravity = 1,
+					}
+					
+				}
+
+			};
+	}
+	public class GlobalValues
+	{
+		private static GlobalValues instance;
+		public List<Node> nodes { get; set; }
+		public List<Edge> edges { get; set; }
 	
+		private GlobalValues()
+		{
+
+		}
+
+		public static GlobalValues Instance
+		{
+			get
+			{
+				if (instance == null)
+					instance = new GlobalValues();
+				return instance;
+			}
+		}
+	}
 }

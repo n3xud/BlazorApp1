@@ -1,9 +1,17 @@
 ﻿@page "/Play/{Value}"
 @inject NavigationManager UriHelper
 @using VisNetwork.Blazor.Models
-@using BlazorApp1.Pages
 
-@if (clicked){
+
+<body>
+    @if(spoiler_ai){
+        <div class="notification is-danger  my-0 py-0">
+            @turndid
+            
+        </div>
+    }
+    @if (clicked)
+    {
     <div class="modal is-active">
     <div class="modal-background"></div>
     
@@ -59,17 +67,17 @@
 }
 @if (start && Value=="ai")
 {
-    <section class="hero is-large is-link">
+    <section class="hero is-large is-link my-0 py-0">
         <div class="hero-body">
             <div class="container">
          
                 <Animate Animation="Animations.Fade" Delay="TimeSpan.FromSeconds(0.3)">
                     <div class="columns  is-mobile is-centered is-multiline ">
                         <div class="column is-narrow">
-                            <button class="button is-primary " @onclick="playasspoiler">Play as Spoiler</button>
+                            <button class="button is-primary is-large " @onclick="playasspoiler">Play as Spoiler</button>
                         </div>
                         <div class="column is-narrow">
-                            <button class="button is-primary" @onclick="playasduplicator">Play as Duplicator</button>
+                            <button class="button is-primary button is-large" @onclick="playasduplicator">Play as Duplicator</button>
                         </div>
                     </div>
                 </Animate>
@@ -84,19 +92,8 @@ else
     clickedwholething = true;
 }
 @if(clickedwholething){
-<p>@if(duplicator_ai){@if (switc)
-            {
-                <Span>spoiler ist dran</Span>
-            }
-            else
-            {
-                <Span>duplicator ist dran</Span>
-            }
-
-        }@turndid
-    </p>
 <Div Background="Background.Dark">
-    <button @onclick="GoToIndex">Change Game Mode</button>    
+    <button class="button is-medium is-warning " @onclick="GoToIndex">Change Game Mode</button>    
     <Animate Animation="Animations.ZoomOut" Delay="TimeSpan.FromSeconds(0.5)" Easing="Easings.EaseIn">
     <Network Id="my-id" Data="@data" class="vis-network-container" OnSelectNode="GetSelectedNodes" @ref="network" Options="ConstructionOptions"  />
     </Animate>
@@ -105,6 +102,7 @@ else
     </Animate>
 </Div>
 }
+</body>
 @code {
 
     [Parameter]
@@ -1087,7 +1085,7 @@ else
             {
                 AutoResize = true,
                 ClickToUse = true,
-                Height = "640px",
+                Height = "100%",
 
                 Nodes = new NodeOption
 
