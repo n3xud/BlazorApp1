@@ -111,6 +111,7 @@ else
     int wnetwork;
     int states1;
     int states2;
+    int chosennet;
     bool switc = true;
     bool possible = false;
     bool flag = false;
@@ -192,7 +193,7 @@ else
                                 else
                                 {
                                     spoilerwon = true;
-                                    
+
                                     return;
                                 }
                             }
@@ -222,7 +223,7 @@ else
                                 else
                                 {
                                     spoilerwon = true;
-                                    
+
                                     return;
                                 }
 
@@ -275,7 +276,7 @@ else
             {
 
                 spoilerwon = true;
-                
+
             }
             turndid = tmpxt + " " + GlobalValues.Instance.clicked_label;
             StateHasChanged();
@@ -298,7 +299,7 @@ else
             {
 
                 spoilerwon = true;
-                
+
             }
             turndid = tmpxt + " " + GlobalValues.Instance.clicked_label;
             StateHasChanged();
@@ -323,10 +324,29 @@ else
 
                     GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
                     switc = false;
+                    chosennet = 1;
                     if (duplicator_ai)
                     {
                         await duplicatorTurn();
 
+                    }
+                    foreach (Edge y in GlobalValues.Instance.edges2)
+                    {
+                        if (y.From == GlobalValues.Instance.tmp_node2.ToString() && y.Label == GlobalValues.Instance.clicked_label)
+                        {
+                            possible = true;
+
+                        }
+                    }
+                    if (possible)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        spoilerwon = true;
+
+                        return;
                     }
                     return;
                 }
@@ -352,10 +372,29 @@ else
 
                     GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
                     switc = false;
+                    chosennet = 2;
                     if (duplicator_ai)
                     {
                         await duplicatorTurn();
 
+                    }
+                    foreach (Edge y in GlobalValues.Instance.edges)
+                    {
+                        if (y.From == GlobalValues.Instance.tmp_node.ToString() && y.Label == GlobalValues.Instance.clicked_label)
+                        {
+                            possible = true;
+
+                        }
+                    }
+                    if (possible)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        spoilerwon = true;
+
+                        return;
                     }
                     return;
                 }
@@ -378,7 +417,7 @@ else
         GlobalValues.Instance.tmp_dest = new List<int>();
         GlobalValues.Instance.tmp_dest2 = new List<int>();
         GlobalValues.Instance.clicked_label_list = new List<string>();
-       
+
         states1 = createLTS(GlobalValues.Instance.nodes, GlobalValues.Instance.edges);
         states2 = createLTS(GlobalValues.Instance.nodes2, GlobalValues.Instance.edges2, states1);
 
@@ -671,8 +710,7 @@ else
                 if (x.From == GlobalValues.Instance.tmp_node.ToString() && (x.To == selNode) && x.Label == GlobalValues.Instance.clicked_label)
                 {
 
-                    GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
-                    GlobalValues.Instance.tmp_dest.Clear();
+
                     if (spoiler_ai && spoilerstratnet==2)
                     {
                         spoilerTurn();
@@ -683,7 +721,13 @@ else
                         await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
                         return;
                     }
-
+                    if (chosennet == 1)
+                    {
+                        await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
+                        return;
+                    }
+                    GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+                   
                     switc = true;
                     return;
                 }
@@ -776,7 +820,7 @@ else
                 if (x.From == GlobalValues.Instance.tmp_node2.ToString() && (x.To == selNode) && x.Label == GlobalValues.Instance.clicked_label)
                 {
 
-                    GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
+
                     if (spoiler_ai && spoilerstratnet==1)
                     {
                         spoilerTurn();
@@ -785,6 +829,13 @@ else
                         await network2.SelectNodes(new[] { GlobalValues.Instance.tmp_node2.ToString() });
                         return;
                     }
+                    if (chosennet == 2)
+                    {
+                        await network2.SelectNodes(new[] { GlobalValues.Instance.tmp_node2.ToString() });
+                        return;
+                    }
+                    GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
+                    
                     switc = true;
                     return;
                 }
