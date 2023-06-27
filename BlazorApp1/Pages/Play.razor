@@ -4,12 +4,12 @@
 
 
 <body>
-    @if(spoiler_ai){
+   
         <div class="notification is-danger  my-0 py-0">
             @turndid
             
         </div>
-    }
+    
     @if (clicked)
     {
     <div class="modal is-active">
@@ -345,6 +345,7 @@ else
 
 
                     GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+                    turndid = selNode + " " + GlobalValues.Instance.clicked_label;
                     switc = false;
                     chosennet = 1;
                     if (duplicator_ai)
@@ -395,6 +396,7 @@ else
 
                     GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
                     switc = false;
+                    turndid = selNode + " " + GlobalValues.Instance.clicked_label;
                     chosennet = 2;
                     if (duplicator_ai)
                     {
