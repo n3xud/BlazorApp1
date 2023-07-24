@@ -7,6 +7,8 @@ using Blazorise;
 using Blazorise.Icons.FontAwesome;
 using Blazorise.Bulma;
 using System.Linq;
+using Blazored.SessionStorage;
+
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
@@ -19,6 +21,13 @@ builder.Services
     })
     .AddBulmaProviders()
     .AddFontAwesomeIcons();
-    
+
+
+
+
+builder.Services.AddBlazoredSessionStorage();
+
+ 
+
 
 await builder.Build().RunAsync();

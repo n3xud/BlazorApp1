@@ -1,10 +1,10 @@
-﻿@page "/Play/{Value}"
+﻿@page "/Play/{mode}"
+@page "/Play"
 @inject NavigationManager UriHelper
 @using VisNetwork.Blazor.Models
-
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
 
 <body>
-   
         <div class="notification is-danger  my-0 py-0">
             @turndid
             
@@ -65,34 +65,16 @@
         </div>
     </div>
 }
-@if (start && Value=="ai")
-{
-    <section class="hero is-large is-link my-0 py-0">
-        <div class="hero-body">
-            <div class="container">
-         
-                <Animate Animation="Animations.Fade" Delay="TimeSpan.FromSeconds(0.3)">
-                    <div class="columns  is-mobile is-centered is-multiline ">
-                        <div class="column is-narrow">
-                            <button class="button is-primary is-large " @onclick="playasspoiler">Play as Spoiler</button>
-                        </div>
-                        <div class="column is-narrow">
-                            <button class="button is-primary button is-large" @onclick="playasduplicator">Play as Duplicator</button>
-                        </div>
-                    </div>
-                </Animate>
-            </div>
-        </div>
-    </section>
-    
-}
-else
-{
-    start = false;
-    clickedwholething = true;
-}
-@if(clickedwholething){
+
+
 <Div Background="Background.Dark">
+            <Slider @bind-Value="@nodecount" Min="1" Max="30" @onchange="nodeChange"/>
+            <Div>@nodecount</Div>
+
+        
+            <Slider @bind-Value="@transitioncountper" Min="0" Max="10" @onchange="nodeChange" />
+            <Div>@transitioncountper</Div>
+        <button class="new" @onclick="@(()=>  UriHelper.NavigateTo(UriHelper.Uri, forceLoad:true))">NEW LTS</button>
     <button class="button is-medium is-warning " @onclick="GoToIndex">Change Game Mode</button>    
     <Animate Animation="Animations.ZoomOut" Delay="TimeSpan.FromSeconds(0.5)" Easing="Easings.EaseIn">
     <Network Id="my-id" Data="@data" class="vis-network-container" OnSelectNode="GetSelectedNodes" @ref="network" Options="ConstructionOptions"  />
@@ -101,12 +83,12 @@ else
     <Network Id="second" Data="@data2" class="vis-network-container" OnSelectNode="GetSelectedNodes2" @ref="network2" Options="ConstructionOptions" />
     </Animate>
 </Div>
-}
+
 </body>
 @code {
 
     [Parameter]
-    public string Value { get; set; }
+    public string mode { get; set; }
 
     private NetworkData data;
     private NetworkData data2;
@@ -132,9 +114,88 @@ else
     bool switc = true;
     bool possible = false;
     bool flag = false;
+    int nodecount = 3;
+    int transitioncount = 5;
+    int transitioncountper = 3;
+    int intertwined = 5; 
     string duplicatorvalue{ get; set; } = "button is-primary";
 
-    private TaskCompletionSource<bool> buttonClickedTaskCompletionSource;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        nodecount = sessionStorage.GetItem<int>("count") ;
+        transitioncountper = sessionStorage.GetItem<int>("transper");
+        Console.WriteLine(nodecount);
+        Console.WriteLine(transitioncountper);
+
+        if (mode == "duplicator")
+        {
+            switc = false;
+            duplicator_ai = true;
+        }
+        if (mode == "spoiler")
+        {
+            spoiler_ai = true;
+        }
+        GlobalValues.Instance.nodes = new List<Node>();
+        GlobalValues.Instance.edges = new List<Edge>();
+        GlobalValues.Instance.nodes2 = new List<Node>();
+        GlobalValues.Instance.edges2 = new List<Edge>();
+        GlobalValues.Instance.tmp_dest = new List<int>();
+        GlobalValues.Instance.tmp_dest2 = new List<int>();
+        GlobalValues.Instance.clicked_label_list = new List<string>();
+
+
+
+
+
+        states1 =  createLTS(GlobalValues.Instance.nodes, GlobalValues.Instance.edges);
+        states2 =  createLTS(GlobalValues.Instance.nodes2, GlobalValues.Instance.edges2, states1);
+
+
+
+        states = states1 + states2;
+
+        GlobalValues.Instance.array = new int[states, states];
+        GlobalValues.Instance.array_old = new int[states, states];
+       
+        GlobalValues.Instance.spoiler = new Tuple<int, int>[states, states];
+        for (int i = 0; i < states; i++)
+        {
+            for (int j = 0; j < states; j++)
+            {
+                GlobalValues.Instance.spoiler[i, j] = Tuple.Create(999, 999);
+                GlobalValues.Instance.array[i, j] = 1;
+                GlobalValues.Instance.array_old[i, j] = 0;
+            }
+        }
+
+    
+
+        calculateStrategy();
+
+
+
+
+
+        data = new NetworkData
+            {
+                Edges = GlobalValues.Instance.edges,
+                Nodes = GlobalValues.Instance.nodes
+            };
+
+
+
+
+
+        data2 = new NetworkData
+            {
+                Edges = GlobalValues.Instance.edges2,
+                Nodes = GlobalValues.Instance.nodes2
+            };
+            StateHasChanged();
+    }
 
     private void GoToIndex()
     {
@@ -144,28 +205,19 @@ else
     {
         UriHelper.NavigateTo("/");
     }
-    private void playasspoiler()
-    {
-        duplicator_ai = true;
-        start = false;
-        clickedwholething = true;
-        //player selects 2 states
-        //player does his first move network and network2 have to register his move
-        //spoiler state is saved
-        //duplicator calculates is next move based on spoilers move
 
+    private void nodeChange()
+    {
+        sessionStorage.SetItem("count", nodecount);
+        sessionStorage.SetItem("transper", transitioncountper);
+        // UriHelper.NavigateTo(UriHelper.Uri, forceLoad: true);
     }
+    
     private void starterror()
     {
         starterrorvalue = false;
     }
-    private async Task playasduplicator()
-    {
-        spoiler_ai= true;
-        switc = false;
-        clickedwholething = true;
-        start = false;
-    }
+    
     private async Task spoilerTurn()
     {
         string alphabet = "abcdefghijklmopqrstuvwxyz";
@@ -432,82 +484,6 @@ else
 
     }
 
-    public Play()
-    {
-
-        GlobalValues.Instance.nodes = new List<Node>();
-        GlobalValues.Instance.edges = new List<Edge>();
-        GlobalValues.Instance.nodes2 = new List<Node>();
-        GlobalValues.Instance.edges2 = new List<Edge>();
-        GlobalValues.Instance.tmp_dest = new List<int>();
-        GlobalValues.Instance.tmp_dest2 = new List<int>();
-        GlobalValues.Instance.clicked_label_list = new List<string>();
-
-        states1 = createLTS(GlobalValues.Instance.nodes, GlobalValues.Instance.edges);
-        states2 = createLTS(GlobalValues.Instance.nodes2, GlobalValues.Instance.edges2, states1);
-
-
-
-        states = states1 + states2;
-
-        GlobalValues.Instance.array = new int[states, states];
-        GlobalValues.Instance.array_old = new int[states, states];
-        Console.WriteLine(states1);
-        Console.WriteLine(states2);
-        Console.WriteLine(states);
-        GlobalValues.Instance.spoiler = new Tuple<int, int>[states, states];
-        for (int i = 0; i < states; i++)
-        {
-            for (int j = 0; j < states; j++)
-            {
-                GlobalValues.Instance.spoiler[i, j] = Tuple.Create(999, 999); 
-            }
-        }
-
-        for (int i = 0; i < states; i++)
-        {
-            for (int j = 0; j < states; j++)
-            {
-                GlobalValues.Instance.array[i, j] = 1;
-                GlobalValues.Instance.array_old[i, j] = 0;
-            }
-        }
-
-        calculateStrategy();
-
-
-
-
-
-        data = new NetworkData
-            {
-                Edges = GlobalValues.Instance.edges,
-                Nodes = GlobalValues.Instance.nodes
-            };
-
-
-
-
-
-        data2 = new NetworkData
-            {
-                Edges = GlobalValues.Instance.edges2,
-                Nodes = GlobalValues.Instance.nodes2
-            };
-
-
-        for (int i = 0; i < states; i++)
-        {
-            for (int j = 0; j < states; j++)
-            {
-                Console.WriteLine(i + " " + j);
-
-                var value3 = GlobalValues.Instance.spoiler[i, j];
-                var test12345 = value3.Item2;
-                Console.WriteLine(test12345);
-            }
-        }
-    }
 
     public async Task duplicatorTurn()
     {
@@ -615,26 +591,7 @@ else
 
         string[] parts = test2.Split(',');
         List<(int, int)> partsList = new List<(int, int)>();
-        /* if (!spoiler_ai)
-        {
-        foreach (string pair in parts)
-        {
-        string[] numbers = pair.Split('-');
-        int firstNumber = int.Parse(numbers[0]);
-        int secondNumber = int.Parse(numbers[1]);
-        partsList.Add((firstNumber, secondNumber));
-    }
-    foreach ((int firstNumber, int secondNumber) in partsList)
-        {
-        if (firstNumber.ToString() == selNode)
-            {
-            GlobalValues.Instance.tmp_dest.Add(secondNumber);
-
-          }
-
-          }
-          }
-          */
+     
 
         foreach(Edge x in GlobalValues.Instance.edges)
         {
@@ -656,24 +613,8 @@ else
         string[] parts = test2.Split(',');
         List<(int, int)> partsList = new List<(int, int)>();
 
-        /* foreach (string pair in parts)
-        {
-        string[] numbers = pair.Split('-');
-        int firstNumber = int.Parse(numbers[0]);
-        int secondNumber = int.Parse(numbers[1]);
-        partsList.Add((firstNumber, secondNumber));
-    }
-    foreach ((int firstNumber, int secondNumber) in partsList)
-        {
-        if (firstNumber.ToString() == selNode)
-            {
-            GlobalValues.Instance.tmp_dest2.Add(secondNumber);
-
-        }
-
-        }
-
-        */
+        
+       
         foreach (Edge x in GlobalValues.Instance.edges2)
         {
             if (selNode == x.From && x.Label == GlobalValues.Instance.clicked_label)
@@ -756,7 +697,7 @@ else
                         return;
                     }
                     GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
-                   
+
                     switc = true;
                     return;
                 }
@@ -869,7 +810,7 @@ else
                         return;
                     }
                     GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
-                    
+
                     switc = true;
                     return;
                 }
@@ -888,22 +829,22 @@ else
 
         string alphabet = "abcdefghijklmopqrstuvwxyz";
         Random rnd = new Random();
-        int states = rnd.Next(2,5);
+        int states = nodecount;
         int alph = rnd.Next(1,5);
-        //GlobalValues.Instance.alphabet
+       
         GlobalValues.Instance.array = new int[states,states];
 
         for (int i = 0 + startvalue; i < states + startvalue; i++)
         {
-          
+
             nodes.Add(new Node(i.ToString(), string.Concat("Node",i), i, "circle"));
         }
         foreach (Node i in nodes)
         {
             //  i. = new NodeColorType.BorderBackgroundColor { Border = "green" };
             List<int> tmp = new List<int>();
-
-            for(int j = 0; j < 3; j++)
+            int maxk = rnd.Next(transitioncountper+1);
+            for(int j = 0; j < maxk; j++)
             {
                 int rnd_alph = rnd.Next(0, alph);
                 int rnd_to = rnd.Next(1+startvalue, states+startvalue);
