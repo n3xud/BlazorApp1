@@ -5,11 +5,8 @@
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
 
 <body>
-        <div class="notification is-danger  my-0 py-0">
-            @turndid
-            
-        </div>
-    
+        
+   
     @if (clicked)
     {
     <div class="modal is-active">
@@ -57,7 +54,7 @@
 
            
             <div class="notification is-link">
-                <button class="delete" @onclick="finished"></button>
+                <button class="delete" @onclick="GoToIndex"></button>
                 <div class="has-text-centered">Spoiler hat gewonnen</div>
             </div>
            
@@ -68,19 +65,102 @@
 
 
 <Div Background="Background.Dark">
-            <Slider @bind-Value="@nodecount" Min="1" Max="30" @onchange="nodeChange"/>
-            <Div>@nodecount</Div>
+                     <div id="navbarBasicExample" class="navbar-menu">
+                         <div class="navbar-start">
+                    <button class="button is-medium is-warning navbar-item" @onclick="GoToIndex">Change Game Mode</button>
+                    <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link has-text-white">
+          Settings
+        </a>
+                        <div class="navbar-dropdown">
+                    <Slider class="navbar-item" @bind-Value="@nodecount" Min="1" Max="30" @onchange="nodeChange" />
+                        <Div class="navbar-item">Nodes:@nodecount</Div>
+                        <Slider class="navbar-item" @bind-Value="@transitioncountper" Min="1" Max="20" @onchange="nodeChange" />
+                        <Div class="navbar-item">Transitions:@transitioncountper</Div>
+                     
+                        <Slider class="navbar-item " @bind-Value="@alpcount" Min="0" Max="24" @onchange="nodeChange" />
+                      
+                        <Div class="navbar-item">Alphabet:@alpcount</Div>
+                    </div>
+                    </div>
+                    <button class="button is-medium" @onclick="@(()=>  UriHelper.NavigateTo(UriHelper.Uri, forceLoad:true))">NEW LTS</button>
+                    </div>
+                    </div>
 
+        <Div class="turns" style="position: fixed;
+    top: 0;
+    
+    right: 0;
+">
+                    <h1 class="title has-text-white">Spoiler</h1>
+            <table class="table">
+                        <thead>
+                            <tr>
+                                <th><abbr title="Turn">Turn</abbr></th>
+                                <th><abbr title="From">From</abbr></th>
+                                <th><abbr title="To">To</abbr></th>
+                                <th><abbr title="Label">Label</abbr></th>
+
+
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var turn in turnList)
+                            {
+                                <tr>
+                                    <th>@turn.turnid</th>
+                                    <td>@turn.from</td>
+                                    <td>@turn.to</td>
+                                    <td>@turn.label</td>
+                                </tr>
+                            }
+                            
+                        </tbody>
+                    </table>
+                     </Div>
+
+        <Div class="turns" style="position: fixed;
+    top: 50%;
+
+    right: 0;
+">
+            <h1 class="title has-text-white">Duplicator</h1>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th><abbr title="Turn">Turn</abbr></th>
+                        <th><abbr title="From">From</abbr></th>
+                        <th><abbr title="To">To</abbr></th>
+                        <th><abbr title="Label">Label</abbr></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var turn in turnListD)
+                    {
+                        <tr>
+                            <th>@turn.turnid</th>
+                            <td>@turn.from</td>
+                            <td>@turn.to</td>
+                            <td>@turn.label</td>
+                        </tr>
+                    }
+
+                </tbody>
+            </table>
+        </Div>
+            
+       
         
-            <Slider @bind-Value="@transitioncountper" Min="0" Max="10" @onchange="nodeChange" />
-            <Div>@transitioncountper</Div>
-        <button class="new" @onclick="@(()=>  UriHelper.NavigateTo(UriHelper.Uri, forceLoad:true))">NEW LTS</button>
-    <button class="button is-medium is-warning " @onclick="GoToIndex">Change Game Mode</button>    
+       
     <Animate Animation="Animations.ZoomOut" Delay="TimeSpan.FromSeconds(0.5)" Easing="Easings.EaseIn">
-    <Network Id="my-id" Data="@data" class="vis-network-container" OnSelectNode="GetSelectedNodes" @ref="network" Options="ConstructionOptions"  />
+            <Network style="width: 100%;
+                     height: 600px;"Id="my-id" Data="@data" class="vis-network-container" OnSelectNode="GetSelectedNodes" @ref="network" Options="ConstructionOptions" />
     </Animate>
     <Animate Animation="Animations.ZoomOut" Delay="TimeSpan.FromSeconds(0.5)" Easing="Easings.EaseIn">
-    <Network Id="second" Data="@data2" class="vis-network-container" OnSelectNode="GetSelectedNodes2" @ref="network2" Options="ConstructionOptions" />
+            <Network style="width: 100%;
+                     height: 600px;"Id="second" Data="@data2" class="vis-network-container" OnSelectNode="GetSelectedNodes2" @ref="network2" Options="ConstructionOptions" />
     </Animate>
 </Div>
 
@@ -117,26 +197,28 @@
     int nodecount = 3;
     int transitioncount = 5;
     int transitioncountper = 3;
-    int intertwined = 5; 
+    int alpcount = 3;
     string duplicatorvalue{ get; set; } = "button is-primary";
-
-
+    int globalturn = 1;
+    int globalturnD = 1;
+    List<Turn> turnList = new List<Turn>();
+    List<Turn> turnListD = new List<Turn>();
 
     protected override async Task OnInitializedAsync()
     {
         nodecount = sessionStorage.GetItem<int>("count") ;
         transitioncountper = sessionStorage.GetItem<int>("transper");
-        Console.WriteLine(nodecount);
-        Console.WriteLine(transitioncountper);
+        alpcount = sessionStorage.GetItem<int>("alp");
+      
 
-        if (mode == "duplicator")
-        {
-            switc = false;
-            duplicator_ai = true;
-        }
         if (mode == "spoiler")
         {
+            duplicator_ai = true;
+        }
+        if (mode == "duplicator")
+        {
             spoiler_ai = true;
+            switc = false;
         }
         GlobalValues.Instance.nodes = new List<Node>();
         GlobalValues.Instance.edges = new List<Edge>();
@@ -159,7 +241,7 @@
 
         GlobalValues.Instance.array = new int[states, states];
         GlobalValues.Instance.array_old = new int[states, states];
-       
+
         GlobalValues.Instance.spoiler = new Tuple<int, int>[states, states];
         for (int i = 0; i < states; i++)
         {
@@ -171,7 +253,7 @@
             }
         }
 
-    
+
 
         calculateStrategy();
 
@@ -194,30 +276,34 @@
                 Edges = GlobalValues.Instance.edges2,
                 Nodes = GlobalValues.Instance.nodes2
             };
-            StateHasChanged();
+        StateHasChanged();
     }
-
+    public class Turn
+    {
+        public string turnid { get; set; }
+        public string from { get; set; }
+        public string to { get; set; }
+        public string label{ get; set; }
+    } 
     private void GoToIndex()
     {
         UriHelper.NavigateTo("/");
     }
-    private void finished()
-    {
-        UriHelper.NavigateTo("/");
-    }
+
 
     private void nodeChange()
     {
         sessionStorage.SetItem("count", nodecount);
         sessionStorage.SetItem("transper", transitioncountper);
-        // UriHelper.NavigateTo(UriHelper.Uri, forceLoad: true);
+        sessionStorage.SetItem("alp", alpcount);
+       
     }
-    
+
     private void starterror()
     {
         starterrorvalue = false;
     }
-    
+
     private async Task spoilerTurn()
     {
         string alphabet = "abcdefghijklmopqrstuvwxyz";
@@ -225,6 +311,7 @@
         int secondElement;
         string tmpa = "";
         string tmpxt = "";
+        var tmpxf = ""; ;
         possible = false;
         for (int i = 0; i < states; i++)
         {
@@ -233,8 +320,8 @@
                 if ((GlobalValues.Instance.tmp_node == i || GlobalValues.Instance.tmp_node == j) && (GlobalValues.Instance.tmp_node2 == i || GlobalValues.Instance.tmp_node2 == j))
                 {
                     var value3 = GlobalValues.Instance.spoiler[i, j];
-                    var test12345 = value3.Item2;
-                    if (test12345 != 999)
+                    // if there is a strategy
+                    if (value3.Item2 != 999)
                     {
 
 
@@ -247,9 +334,12 @@
                                 GlobalValues.Instance.clicked_label = alphabet[value1.Item1].ToString();
                                 GlobalValues.Instance.tmp_node = Int16.Parse(x.To);
                                 if (secondElement < states1) { await network.SelectNodes(new[] { secondElement.ToString() }); }
-                                Console.WriteLine(secondElement+" sec ");
-                                turndid = x.To + " " + GlobalValues.Instance.clicked_label;
+
+                                var newTurn = new Turn { turnid = globalturn.ToString(), from = x.From, to = x.To, label = GlobalValues.Instance.clicked_label };
+                                globalturn++;
+                                turnList.Add(newTurn);
                                 StateHasChanged();
+
                                 spoilerstratnet = 1;
                                 foreach (Edge y in GlobalValues.Instance.edges2)
                                 {
@@ -261,6 +351,7 @@
                                 }
                                 if (possible)
                                 {
+
                                     return;
                                 }
                                 else
@@ -276,15 +367,20 @@
                             if ((x.From == i.ToString() || x.From == j.ToString()) && (x.To == secondElement.ToString()))
                             {
                                 GlobalValues.Instance.clicked_label = alphabet[value1.Item1].ToString();
-                                GlobalValues.Instance.tmp_node2 = Int16.Parse(x.To);
                                 if (secondElement > states1) { await network2.SelectNodes(new[] { secondElement.ToString() }); }
-                                turndid = x.To + " " + GlobalValues.Instance.clicked_label;
+
+                                var newTurn = new Turn { turnid = globalturn.ToString(), from = x.From, to = x.To, label = GlobalValues.Instance.clicked_label };
+                                globalturn++;
+                                turnList.Add(newTurn);
                                 StateHasChanged();
+
+                                GlobalValues.Instance.tmp_node2 = Int16.Parse(x.To);
                                 spoilerstratnet = 2;
                                 foreach (Edge y in GlobalValues.Instance.edges)
                                 {
                                     if (y.From == GlobalValues.Instance.tmp_node.ToString() && y.Label == GlobalValues.Instance.clicked_label)
                                     {
+
                                         possible = true;
 
                                     }
@@ -313,7 +409,7 @@
                                 tmpa = x.Label;
 
                                 tmpxt = x.To;
-
+                                tmpxf = x.From;
                             }
                         }
                         foreach (Edge x in GlobalValues.Instance.edges2)
@@ -323,6 +419,7 @@
                                 tmpa = x.Label;
 
                                 tmpxt = x.To;
+                                tmpxf = x.From;
 
                             }
                         }
@@ -337,6 +434,12 @@
             GlobalValues.Instance.tmp_node = Int16.Parse(tmpxt);
             spoilerstratnet = 1;
             await network.SelectNodes(new[] { tmpxt.ToString() });
+
+            var newTurn = new Turn { turnid = globalturn.ToString(), from = tmpxf, to = tmpxt, label = GlobalValues.Instance.clicked_label };
+            globalturn++;
+            turnList.Add(newTurn);
+            StateHasChanged();
+
             foreach (Edge y in GlobalValues.Instance.edges2)
             {
                 if (y.From == GlobalValues.Instance.tmp_node2.ToString() && y.Label == GlobalValues.Instance.clicked_label)
@@ -351,7 +454,7 @@
                 spoilerwon = true;
 
             }
-            turndid = tmpxt + " " + GlobalValues.Instance.clicked_label;
+
             StateHasChanged();
         }
         else
@@ -360,6 +463,10 @@
             GlobalValues.Instance.tmp_node2 = Int16.Parse(tmpxt);
             spoilerstratnet = 2;
             await network2.SelectNodes(new[] { tmpxt.ToString() });
+            var newTurn = new Turn { turnid = globalturn.ToString(), from = tmpxf, to = tmpxt, label = GlobalValues.Instance.clicked_label };
+            globalturn++;
+            turnList.Add(newTurn);
+            StateHasChanged();
             foreach (Edge y in GlobalValues.Instance.edges)
             {
                 if (y.From == GlobalValues.Instance.tmp_node.ToString() && y.Label == GlobalValues.Instance.clicked_label)
@@ -374,7 +481,7 @@
                 spoilerwon = true;
 
             }
-            turndid = tmpxt + " " + GlobalValues.Instance.clicked_label;
+
             StateHasChanged();
         }
     }
@@ -395,9 +502,9 @@
                 {
 
 
-
+                    var tmp_from = GlobalValues.Instance.tmp_node.ToString();
                     GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
-                    turndid = selNode + " " + GlobalValues.Instance.clicked_label;
+
                     switc = false;
                     chosennet = 1;
                     if (duplicator_ai)
@@ -415,6 +522,9 @@
                     }
                     if (possible)
                     {
+                        var newTurn = new Turn { turnid = globalturn.ToString(), from = tmp_from, to = selNode, label = GlobalValues.Instance.clicked_label };
+                        globalturn++;
+                        turnList.Add(newTurn);
                         return;
                     }
                     else
@@ -445,10 +555,10 @@
                 {
 
 
-
+                    var tmp_from = GlobalValues.Instance.tmp_node2.ToString();
                     GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
                     switc = false;
-                    turndid = selNode + " " + GlobalValues.Instance.clicked_label;
+
                     chosennet = 2;
                     if (duplicator_ai)
                     {
@@ -465,6 +575,9 @@
                     }
                     if (possible)
                     {
+                        var newTurn = new Turn { turnid = globalturn.ToString(), from = tmp_from, to = selNode, label = GlobalValues.Instance.clicked_label };
+                        globalturn++;
+                        turnList.Add(newTurn);
                         return;
                     }
                     else
@@ -487,7 +600,9 @@
 
     public async Task duplicatorTurn()
     {
-        int temporary = 0;
+        flag = false;
+        string temporary = "";
+        string temporaryF = "";
         if (wnetwork==1){
 
             foreach (Edge x in GlobalValues.Instance.edges2) 
@@ -496,7 +611,8 @@
                 {
                     if (x.Label == GlobalValues.Instance.clicked_label)
                     {
-                        temporary = Int16.Parse(x.To);
+                        temporary = x.To;
+                        temporaryF = x.From;
                         flag = true;
 
                     }
@@ -507,9 +623,13 @@
                             if (x.Label == GlobalValues.Instance.clicked_label)
                             {
                                 await network2.SelectNodes(new[] { x.To.ToString() });
-                                GlobalValues.Instance.tmp_node2 = Int16.Parse(x.To);
+
                                 flag = false;
                                 switc = true;
+                                var newTurn = new Turn { turnid = globalturnD.ToString(), from = x.From.ToString(), to = x.To.ToString(), label = GlobalValues.Instance.clicked_label };
+                                globalturnD++;
+                                turnListD.Add(newTurn);
+                                GlobalValues.Instance.tmp_node2 = Int16.Parse(x.To);
                                 return;
                             }
                         }
@@ -520,8 +640,11 @@
             }
             if (flag)
             {
-                await network2.SelectNodes(new[] { temporary.ToString() });
-                GlobalValues.Instance.tmp_node2 = temporary;
+                await network2.SelectNodes(new[] { temporary });
+                var newTurn = new Turn { turnid = globalturnD.ToString(), from = temporaryF, to = temporary.ToString(), label = GlobalValues.Instance.clicked_label };
+                globalturnD++;
+                turnListD.Add(newTurn);
+                GlobalValues.Instance.tmp_node2 = Int16.Parse(temporary);
                 switc = true;
                 flag = false;
             }
@@ -542,7 +665,7 @@
                 {
                     if (x.Label == GlobalValues.Instance.clicked_label)
                     {
-                        temporary = Int16.Parse(x.To);
+                        temporary = x.To;
                         flag = true;
 
                     }
@@ -553,6 +676,9 @@
                             if (x.Label == GlobalValues.Instance.clicked_label)
                             {
                                 await network.SelectNodes(new[] { x.To.ToString() });
+                                var newTurn = new Turn { turnid = globalturnD.ToString(), from = x.From.ToString(), to = x.To.ToString(), label = GlobalValues.Instance.clicked_label };
+                                globalturnD++;
+                                turnListD.Add(newTurn);
                                 GlobalValues.Instance.tmp_node = Int16.Parse(x.To);
                                 switc = true;
                                 flag = false;
@@ -567,7 +693,10 @@
             if (flag)
             {
                 await network.SelectNodes(new[] { temporary.ToString() });
-                GlobalValues.Instance.tmp_node = temporary;
+                var newTurn = new Turn { turnid = globalturnD.ToString(), from = temporaryF, to = temporary.ToString(), label = GlobalValues.Instance.clicked_label };
+                globalturnD++;
+                turnListD.Add(newTurn);
+                GlobalValues.Instance.tmp_node = Int16.Parse(temporary);
                 switc = true;
                 flag = false;
             }
@@ -582,49 +711,7 @@
 
     }
 
-    private async Task Check0Node()
-    {
-        var edge1 = await network.GetSelectedEdges();
-        var result = await network.GetSelectedNodes();
-        var selNode = string.Concat(result);
-        var test2 = string.Concat(string.Join(",", edge1));
 
-        string[] parts = test2.Split(',');
-        List<(int, int)> partsList = new List<(int, int)>();
-     
-
-        foreach(Edge x in GlobalValues.Instance.edges)
-        {
-            if(selNode == x.From)
-            {
-                GlobalValues.Instance.tmp_dest.Add(Int16.Parse(x.To));
-            }
-        }
-
-
-    }
-    private async Task Check2Node()
-    {
-        var edge1 = await network2.GetSelectedEdges();
-        var result = await network2.GetSelectedNodes();
-        var selNode = string.Concat(result);
-        var test2 = string.Concat(string.Join(",", edge1));
-
-        string[] parts = test2.Split(',');
-        List<(int, int)> partsList = new List<(int, int)>();
-
-        
-       
-        foreach (Edge x in GlobalValues.Instance.edges2)
-        {
-            if (selNode == x.From && x.Label == GlobalValues.Instance.clicked_label)
-            {
-                GlobalValues.Instance.tmp_dest2.Add(Int16.Parse(x.To));
-            }
-        }
-
-
-    }
 
     private async Task GetSelectedNodes(ClickEvent eventArg)
     {
@@ -638,18 +725,25 @@
             startgo = 1;
 
             GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+
+            //spoiler ai
             if (startgo == 1 && startgo2 == 1 && spoiler_ai == true)
             {
                 spoilerTurn();
                 startgo = 2;
             }
+            //
             return;
         }
+
+        //both conditions
         if(startgo2==0){
             await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
             starterrorvalue = true;
             return;
         }
+        //
+
         if (switc)
         {
             foreach (Edge x in GlobalValues.Instance.edges)
@@ -683,6 +777,13 @@
 
                     if (spoiler_ai && spoilerstratnet==2)
                     {
+                        GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+
+                      
+                        var newTurnn = new Turn { turnid = globalturnD.ToString(), from = x.From, to = selNode, label = GlobalValues.Instance.clicked_label };
+                        globalturnD++;
+                        turnListD.Add(newTurnn);
+
                         spoilerTurn();
                         return;
                     }
@@ -696,9 +797,15 @@
                         await network.SelectNodes(new[] { GlobalValues.Instance.tmp_node.ToString() });
                         return;
                     }
-                    GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
+
 
                     switc = true;
+
+                    var newTurn = new Turn { turnid = globalturnD.ToString(), from = GlobalValues.Instance.tmp_node.ToString(), to = selNode, label = GlobalValues.Instance.clicked_label };
+                    globalturnD++;
+                    turnListD.Add(newTurn);
+
+                    GlobalValues.Instance.tmp_node = Int16.Parse(selNode);
                     return;
                 }
 
@@ -798,6 +905,12 @@
 
                     if (spoiler_ai && spoilerstratnet==1)
                     {
+                        GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
+
+                        var newTurnn = new Turn { turnid = globalturnD.ToString(), from = x.From, to = selNode, label = GlobalValues.Instance.clicked_label };
+                        globalturnD++;
+                        turnListD.Add(newTurnn);
+
                         spoilerTurn();
                         return;
                     }else if(spoiler_ai){
@@ -809,9 +922,13 @@
                         await network2.SelectNodes(new[] { GlobalValues.Instance.tmp_node2.ToString() });
                         return;
                     }
-                    GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
+                    
 
                     switc = true;
+                    var newTurn = new Turn { turnid = globalturnD.ToString(), from = GlobalValues.Instance.tmp_node2.ToString(), to = selNode, label = GlobalValues.Instance.clicked_label };
+                    globalturnD++;
+                    turnListD.Add(newTurn);
+                    GlobalValues.Instance.tmp_node2 = Int16.Parse(selNode);
                     return;
                 }
 
@@ -830,7 +947,7 @@
         string alphabet = "abcdefghijklmopqrstuvwxyz";
         Random rnd = new Random();
         int states = nodecount;
-        int alph = rnd.Next(1,5);
+        int alph = alpcount;
        
         GlobalValues.Instance.array = new int[states,states];
 
