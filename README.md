@@ -5,8 +5,8 @@ prereq: .NET RunTime
 
 git clone into folder 
 
--install dependencies
+-install dependencies//
 dotnet restore
 
--start application on port 7176(localhost)
+-start application on port 7176(localhost)//
 dotnet watch run
