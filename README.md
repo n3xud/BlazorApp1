@@ -9,4 +9,4 @@ git clone into folder
 dotnet restore
 
 -start application on port 7176(localhost)//
-dotnet watch run
+dotnet run
